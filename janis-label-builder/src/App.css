@@ -80,11 +80,20 @@
   width: 100%;
 }
 .dropzone {
-  min-height: 60px; border: 1.5px dashed #d0d0d0; border-radius: 3px;
+  border: 1.5px dashed #d0d0d0; border-radius: 3px;
   margin: 6px; display: flex; align-items: center; justify-content: center;
-  color: #ccc; font-size: 11px; transition: all .12s;
+  color: #ccc; font-size: 11px; transition: background .1s, border-color .1s;
 }
-.dropzone.over { border-color: #4a6cf7; background: #f5f5ff; color: #4a6cf7; }
+.dropzone.dz-empty { min-height: 60px; }
+.dropzone.dz-slot  { min-height: 32px; }
+/* insertion bars shown while reordering – clearly highlighted drop targets */
+.dropzone.dz-bar {
+  border-color: #9db0f5; background: #f2f5ff; color: #6f86ef;
+}
+.dropzone.over,
+.dropzone.dz-hot {
+  border-color: #4a6cf7; border-width: 2px; background: #e3e9ff; color: #4a6cf7;
+}
 .empty-c {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 6px; padding: 32px 16px; color: #ccc; text-align: center;
@@ -126,14 +135,6 @@
   box-shadow: 0 3px 12px rgba(0,0,0,.25);
 }
 
-/* Drop zones become prominent while a canvas widget is being dragged */
-.dropzone.dz-active {
-  min-height: 46px; border-color: #4a6cf7; background: #f5f5ff; color: #4a6cf7;
-}
-.dropzone.dz-hot {
-  border-color: #4a6cf7; border-width: 2px; background: #e8ecff; color: #4a6cf7;
-  transform: scale(1.01);
-}
 .wov {
   position: absolute; top: 3px; right: 3px;
   display: flex; gap: 3px; opacity: 0; transition: opacity .12s; z-index: 10;

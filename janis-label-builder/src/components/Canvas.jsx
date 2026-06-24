@@ -8,48 +8,43 @@ const SIZE_MAP = {
   label: { minHeight: '260px', maxWidth: '300px' },
 }
 
-/* Drop zone: accepts BOTH native palette drags and pointer-based canvas-widget drags. */
-function DropZone({ dragTypeRef, onAdd, afterIndex = -1, colSpan = 4, compact, dragActive }) {
+/* Drop zone: accepts native palette drags (onDrop) and is detected by pointer drags
+   via data-after-index + elementFromPoint. */
+function DropZone({ dragTypeRef, onAdd, afterIndex = -1, colSpan = 4, zoneKey, variant, hot }) {
   const ref = useRef(null)
   const [over, setOver] = useState(false)
 
-  // native (palette) drop handlers
-  function handleDragOver(e) {
-    e.preventDefault()
-    e.stopPropagation()
-    setOver(true)
-  }
-  function handleDragLeave(e) {
-    if (!ref.current?.contains(e.relatedTarget)) setOver(false)
-  }
+  function handleDragOver(e) { e.preventDefault(); e.stopPropagation(); setOver(true) }
+  function handleDragLeave(e) { if (!ref.current?.contains(e.relatedTarget)) setOver(false) }
   function handleDrop(e) {
-    e.preventDefault()
-    e.stopPropagation()
-    setOver(false)
-    if (dragTypeRef.current) {
-      onAdd(dragTypeRef.current, afterIndex)
-      dragTypeRef.current = null
-    }
+    e.preventDefault(); e.stopPropagation(); setOver(false)
+    if (dragTypeRef.current) { onAdd(dragTypeRef.current, afterIndex); dragTypeRef.current = null }
   }
+
+  const cls = `dropzone dz-${variant}${over ? ' over' : ''}${hot ? ' dz-hot' : ''}`
+  const baseStyle = { gridColumn: `span ${colSpan}` }
+  if (variant === 'bar') Object.assign(baseStyle, { minHeight: 22, margin: '2px 4px' })
+  else if (variant === 'slot') Object.assign(baseStyle, { minHeight: 32, margin: 4 })
 
   return (
     <div
       ref={ref}
-      className={`dropzone${over ? ' over' : ''}${dragActive ? ' dz-active' : ''}`}
+      className={cls}
       data-after-index={afterIndex}
-      style={{ gridColumn: `span ${colSpan}`, ...(compact ? { minHeight: 32, margin: 4 } : {}) }}
+      data-zone-key={zoneKey}
+      style={baseStyle}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {compact
-        ? <span style={{ fontSize: 10, color: over ? '#4a6cf7' : '#ccc', pointerEvents: 'none' }}>+ soltar aquí</span>
-        : (
+      {variant === 'empty'
+        ? (
           <div className="empty-c" style={{ pointerEvents: 'none' }}>
             <i className="ti ti-drag-drop" aria-hidden="true" />
             <p>Arrastrá widgets aquí</p>
           </div>
-        )}
+        )
+        : <span style={{ fontSize: 10, pointerEvents: 'none' }}>+ soltar aquí</span>}
     </div>
   )
 }
@@ -57,26 +52,19 @@ function DropZone({ dragTypeRef, onAdd, afterIndex = -1, colSpan = 4, compact, d
 /* Resize handle */
 function ResizeHandle({ widget, canvasRef, onResize }) {
   const startRef = useRef(null)
-
   function onMouseDown(e) {
-    e.preventDefault()
-    e.stopPropagation()
+    e.preventDefault(); e.stopPropagation()
     const canvasWidth = canvasRef.current?.offsetWidth || 480
     const colWidth = canvasWidth / 4
     startRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
+      startX: e.clientX, startY: e.clientY,
       initColSpan: widget.data.colSpan ?? 4,
-      initHeight: widget.data.height ?? 80,
-      colWidth,
+      initHeight: widget.data.height ?? 80, colWidth,
     }
-
     function onMove(e) {
       const { startX, startY, initColSpan, initHeight, colWidth } = startRef.current
-      const dx = e.clientX - startX
-      const dy = e.clientY - startY
-      const newColSpan = Math.max(1, Math.min(4, Math.round(initColSpan + dx / colWidth)))
-      const newHeight = Math.max(20, Math.round(initHeight + dy))
+      const newColSpan = Math.max(1, Math.min(4, Math.round(initColSpan + (e.clientX - startX) / colWidth)))
+      const newHeight = Math.max(20, Math.round(initHeight + (e.clientY - startY)))
       onResize(widget.id, newColSpan, newHeight)
     }
     function onUp() {
@@ -87,14 +75,8 @@ function ResizeHandle({ widget, canvasRef, onResize }) {
     document.addEventListener('mousemove', onMove)
     document.addEventListener('mouseup', onUp)
   }
-
   return (
-    <div
-      className="resize-handle"
-      onMouseDown={onMouseDown}
-      onClick={e => e.stopPropagation()}
-      title="Arrastrar para redimensionar"
-    >
+    <div className="resize-handle" onMouseDown={onMouseDown} onClick={e => e.stopPropagation()} title="Redimensionar">
       <i className="ti ti-arrows-diagonal" style={{ fontSize: 9, pointerEvents: 'none' }} />
     </div>
   )
@@ -105,8 +87,7 @@ function exportHbs(widgets) {
   const body = widgets.map(w => '  ' + genHbs(w).replace(/\n/g, '\n  ')).join('\n\n')
   const full =
     `{{#if order}}\n<div class="label-container" id="pedido-{{root.order.commerceSequentialId}}">\n\n` +
-    body +
-    `\n\n</div>\n{{/if}}`
+    body + `\n\n</div>\n{{/if}}`
   const win = window.open('', '_blank', 'width=720,height=520')
   win.document.write(
     `<pre style="font-family:monospace;font-size:12px;padding:24px;white-space:pre-wrap;background:#1e1e1e;color:#d4d4d4;min-height:100vh">${esc(full)}</pre>`
@@ -129,9 +110,9 @@ function buildRowSlots(widgets) {
 export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onDelete, onMove, onMoveTo, onSelect, onClear, onReorder, onResize, selFieldKey, onFieldSelect }) {
   const sizeRef = useRef(null)
   const canvasRef = useRef(null)
-  // pointer-drag state for moving an existing canvas widget
   const [dragId, setDragId] = useState(null)
-  const [ghost, setGhost] = useState(null) // {x, y, label}
+  const [ghost, setGhost] = useState(null)        // {x, y, label}
+  const [hotKey, setHotKey] = useState(null)       // which drop zone is highlighted
   const dragStateRef = useRef(null)
 
   function onSizeChange(e) {
@@ -142,41 +123,36 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
     }
   }
 
-  function highlightZoneAt(x, y) {
-    // clear previous
-    document.querySelectorAll('.dropzone.dz-hot').forEach(el => el.classList.remove('dz-hot'))
-    const el = document.elementFromPoint(x, y)
-    const zone = el?.closest('.dropzone')
-    if (zone) zone.classList.add('dz-hot')
-    return zone
-  }
-
   function startWidgetDrag(id, label, e) {
-    e.preventDefault()
-    e.stopPropagation()
+    e.preventDefault(); e.stopPropagation()
     setDragId(id)
     setGhost({ x: e.clientX, y: e.clientY, label })
-    dragStateRef.current = { id, zone: null }
+    setHotKey(null)
+    dragStateRef.current = { id, afterIndex: null }
     document.body.style.userSelect = 'none'
+    document.body.style.cursor = 'grabbing'
 
     function onMove(ev) {
       setGhost({ x: ev.clientX, y: ev.clientY, label })
-      const zone = highlightZoneAt(ev.clientX, ev.clientY)
-      dragStateRef.current.zone = zone
+      const el = document.elementFromPoint(ev.clientX, ev.clientY)
+      const zone = el?.closest('.dropzone')
+      if (zone) {
+        setHotKey(zone.getAttribute('data-zone-key'))
+        dragStateRef.current.afterIndex = parseInt(zone.getAttribute('data-after-index'), 10)
+      } else {
+        setHotKey(null)
+        dragStateRef.current.afterIndex = null
+      }
     }
     function onUp() {
       document.removeEventListener('mousemove', onMove)
       document.removeEventListener('mouseup', onUp)
       document.body.style.userSelect = ''
-      const zone = dragStateRef.current?.zone
-      if (zone) {
-        const afterIndex = parseInt(zone.getAttribute('data-after-index'), 10)
-        onMoveTo(dragStateRef.current.id, afterIndex)
-      }
-      document.querySelectorAll('.dropzone.dz-hot').forEach(el => el.classList.remove('dz-hot'))
+      document.body.style.cursor = ''
+      const { id, afterIndex } = dragStateRef.current || {}
+      if (afterIndex !== null && afterIndex !== undefined) onMoveTo(id, afterIndex)
       dragStateRef.current = null
-      setDragId(null)
-      setGhost(null)
+      setDragId(null); setGhost(null); setHotKey(null)
     }
     document.addEventListener('mousemove', onMove)
     document.addEventListener('mouseup', onUp)
@@ -209,9 +185,15 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
         <div className="lcanvas" ref={sizeRef}>
           <div className={`lcgrid${dragActive ? ' grid-dragging' : ''}`} ref={canvasRef} onClick={() => onSelect(null)}>
             {widgets.length === 0
-              ? <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={-1} colSpan={4} />
+              ? <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={-1} colSpan={4} zoneKey="empty" variant="empty" />
               : (
                 <>
+                  {/* insertion bar before the first widget (only while reordering) */}
+                  {dragActive && (
+                    <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={-1} colSpan={4}
+                      zoneKey="bar--1" variant="bar" hot={hotKey === 'bar--1'} />
+                  )}
+
                   {widgets.map((w, i) => (
                     <Fragment key={w.id}>
                       <div
@@ -222,7 +204,6 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                         }}
                         onClick={e => { e.stopPropagation(); onSelect(w.id) }}
                       >
-                        {/* Dedicated move handle – pointer drag to reorder */}
                         <div
                           className="cwrap-move-handle"
                           title="Mantené presionado y arrastrá para mover"
@@ -235,45 +216,41 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                         <WidgetRenderer widget={w} sampleData={sampleData} isSelected={selId === w.id} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
                         <div className="wov">
                           {i > 0 && (
-                            <button className="wob wob-mv" title="Subir"
-                              onClick={e => { e.stopPropagation(); onMove(w.id, -1) }}>
+                            <button className="wob wob-mv" title="Subir" onClick={e => { e.stopPropagation(); onMove(w.id, -1) }}>
                               <i className="ti ti-chevron-up" aria-hidden="true" />
                             </button>
                           )}
                           {i < widgets.length - 1 && (
-                            <button className="wob wob-mv" title="Bajar"
-                              onClick={e => { e.stopPropagation(); onMove(w.id, 1) }}>
+                            <button className="wob wob-mv" title="Bajar" onClick={e => { e.stopPropagation(); onMove(w.id, 1) }}>
                               <i className="ti ti-chevron-down" aria-hidden="true" />
                             </button>
                           )}
-                          <button className="wob wob-del" title="Eliminar"
-                            onClick={e => { e.stopPropagation(); onDelete(w.id) }}>
+                          <button className="wob wob-del" title="Eliminar" onClick={e => { e.stopPropagation(); onDelete(w.id) }}>
                             <i className="ti ti-x" aria-hidden="true" />
                           </button>
                         </div>
                         <ResizeHandle widget={w} canvasRef={canvasRef} onResize={onResize} />
                       </div>
+
+                      {/* leftover-space slot in the same row (palette + horizontal placement) */}
                       {rowSlots[i] > 0 && (
-                        <DropZone
-                          dragTypeRef={dragTypeRef}
-                          onAdd={onAdd}
-                          afterIndex={i}
-                          colSpan={rowSlots[i]}
-                          compact
-                          dragActive={dragActive}
-                        />
+                        <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={i} colSpan={rowSlots[i]}
+                          zoneKey={`slot-${i}`} variant="slot" hot={hotKey === `slot-${i}`} />
+                      )}
+
+                      {/* full-width insertion bar after each widget (only while reordering) */}
+                      {dragActive && (
+                        <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={i} colSpan={4}
+                          zoneKey={`bar-${i}`} variant="bar" hot={hotKey === `bar-${i}`} />
                       )}
                     </Fragment>
                   ))}
-                  {/* trailing full-width drop zone (always present so there's a target after the last row) */}
-                  <DropZone
-                    dragTypeRef={dragTypeRef}
-                    onAdd={onAdd}
-                    afterIndex={widgets.length - 1}
-                    colSpan={4}
-                    compact
-                    dragActive={dragActive}
-                  />
+
+                  {/* trailing zone for palette drops when not reordering */}
+                  {!dragActive && (
+                    <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={widgets.length - 1} colSpan={4}
+                      zoneKey="trailing" variant="slot" />
+                  )}
                 </>
               )}
           </div>
