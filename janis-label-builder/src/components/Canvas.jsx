@@ -2,10 +2,11 @@ import { useRef, useState, useEffect, Fragment } from 'react'
 import WidgetRenderer from './WidgetRenderer'
 import { genHbs, esc } from '../utils/helpers'
 
+// Physical page sizes (mm) so the build canvas is true-to-paper and prints full width.
 const SIZE_MAP = {
-  a4:    { minHeight: '600px', maxWidth: '480px' },
-  half:  { minHeight: '400px', maxWidth: '380px' },
-  label: { minHeight: '260px', maxWidth: '300px' },
+  a4:    { w: '210mm', h: '297mm' },
+  half:  { w: '140mm', h: '216mm' },
+  label: { w: '100mm', h: '150mm' },
 }
 
 /* Drop zone: accepts native palette drags (onDrop) and is detected by pointer drags
@@ -120,13 +121,7 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
   const dragStateRef = useRef(null)
 
   function onSizeChange(e) {
-    const val = e.target.value
-    setPaper(val)
-    const s = SIZE_MAP[val] || SIZE_MAP.a4
-    if (sizeRef.current) {
-      sizeRef.current.style.minHeight = s.minHeight
-      sizeRef.current.style.maxWidth = s.maxWidth
-    }
+    setPaper(e.target.value)
   }
 
   function startWidgetDrag(id, label, e) {
@@ -188,7 +183,6 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
   const rowSlots = buildRowSlots(widgets)
   const dragActive = dragId !== null
   const paperStyle = SIZE_MAP[paper] || SIZE_MAP.a4
-  const paperRowSlots = buildRowSlots(widgets)
 
   return (
     <div className="panel panel-center">
@@ -217,7 +211,7 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
       </div>
 
       <div className="carea">
-        <div className="lcanvas" ref={sizeRef}>
+        <div className="lcanvas" ref={sizeRef} style={{ maxWidth: paperStyle.w, minHeight: paperStyle.h }}>
           <div
             className={`lcgrid${dragActive ? ' grid-dragging' : ''}`}
             ref={canvasRef}
@@ -336,14 +330,14 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
               </div>
             </div>
             <div className="preview-scroll">
-              <div className="preview-paper" style={{ maxWidth: paperStyle.maxWidth, minHeight: paperStyle.minHeight }}>
+              <div className="preview-paper" style={{ width: paperStyle.w, minHeight: paperStyle.h }}>
                 <div className="lcgrid">
                   {widgets.map((w, i) => (
                     <Fragment key={w.id}>
                       <div style={{ gridColumn: `span ${w.data.colSpan ?? 4}`, minHeight: w.data.height ? w.data.height + 'px' : undefined }}>
                         <WidgetRenderer widget={w} sampleData={sampleData} isSelected={false} onReorder={onReorder} />
                       </div>
-                      {paperRowSlots[i] > 0 && <div style={{ gridColumn: `span ${paperRowSlots[i]}` }} />}
+                      {rowSlots[i] > 0 && <div style={{ gridColumn: `span ${rowSlots[i]}` }} />}
                     </Fragment>
                   ))}
                 </div>

@@ -392,7 +392,7 @@
 }
 .preview-modal {
   background: #f3f4f8; border-radius: 10px; overflow: hidden;
-  width: 100%; max-width: 760px; max-height: 92vh;
+  width: 100%; max-width: 900px; max-height: 92vh;
   display: flex; flex-direction: column;
   box-shadow: 0 12px 48px rgba(0,0,0,.35);
 }
@@ -412,19 +412,26 @@
   display: grid; grid-template-columns: repeat(4, 1fr); align-items: start; gap: 0;
 }
 
-/* ── Print: only the paper, fit to page ── */
+/* ── Print: only the paper, filling the full page width ── */
 @media print {
+  html, body { width: 100% !important; height: auto !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
   body * { visibility: hidden !important; }
   .preview-paper, .preview-paper * { visibility: visible !important; }
   .preview-overlay {
-    position: static; background: none; padding: 0; display: block; backdrop-filter: none;
+    position: absolute !important; inset: 0 !important; left: 0 !important; top: 0 !important;
+    width: 100% !important; background: none !important; padding: 0 !important;
+    display: block !important; backdrop-filter: none !important; overflow: visible !important;
   }
-  .preview-modal { box-shadow: none; max-height: none; max-width: none; background: #fff; }
+  .preview-modal {
+    box-shadow: none !important; max-height: none !important; max-width: none !important;
+    width: 100% !important; background: #fff !important; border-radius: 0 !important; overflow: visible !important;
+  }
   .preview-bar { display: none !important; }
-  .preview-scroll { overflow: visible; padding: 0; display: block; }
+  .preview-scroll { overflow: visible !important; padding: 0 !important; display: block !important; }
   .preview-paper {
-    box-shadow: none; margin: 0; max-width: none !important; width: 100% !important;
-    min-height: 0 !important;
+    box-shadow: none !important; margin: 0 !important;
+    width: 100% !important; max-width: none !important; min-width: 0 !important;
+    min-height: 0 !important; padding: 0 !important;
   }
-  @page { margin: 12mm; }
+  @page { size: auto; margin: 12mm; }
 }
