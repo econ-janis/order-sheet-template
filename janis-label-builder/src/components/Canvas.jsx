@@ -8,13 +8,13 @@ const SIZE_MAP = {
   label: { minHeight: '260px', maxWidth: '300px' },
 }
 
-function DropZone({ dragTypeRef, onAdd, compact }) {
+function DropZone({ dragTypeRef, onAdd, colSpan = 4, compact }) {
   const ref = useRef(null)
   return (
     <div
       ref={ref}
       className="dropzone"
-      style={compact ? { minHeight: 32, margin: 4, gridColumn: 'span 4' } : undefined}
+      style={{ gridColumn: `span ${colSpan}`, ...(compact ? { minHeight: 32, margin: 4 } : {}) }}
       onDragOver={e => { e.preventDefault(); ref.current.classList.add('over') }}
       onDragLeave={() => ref.current.classList.remove('over')}
       onDrop={e => {
@@ -99,6 +99,26 @@ function exportHbs(widgets) {
   )
 }
 
+/* compute remaining columns after each widget so we know where inline drop zones go */
+function buildRowSlots(widgets) {
+  // returns array of same length as widgets: remaining cols in that row after placing the widget
+  // 0 means row is full (no inline drop zone needed)
+  const result = []
+  let col = 0
+  for (const w of widgets) {
+    const span = w.data.colSpan ?? 4
+    col += span
+    const remainder = col % 4
+    if (remainder === 0) {
+      result.push(0)
+      col = 0
+    } else {
+      result.push(4 - remainder)
+    }
+  }
+  return result
+}
+
 export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onDelete, onMove, onSelect, onClear, onReorder, onResize, selFieldKey, onFieldSelect }) {
   const sizeRef = useRef(null)
   const canvasRef = useRef(null)
@@ -110,6 +130,8 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
       sizeRef.current.style.maxWidth = s.maxWidth
     }
   }
+
+  const rowSlots = buildRowSlots(widgets)
 
   return (
     <div className="panel panel-center">
@@ -135,42 +157,54 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
         <div className="lcanvas" ref={sizeRef}>
           <div className="lcgrid" ref={canvasRef} onClick={() => onSelect(null)}>
             {widgets.length === 0
-              ? <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} />
+              ? <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} colSpan={4} />
               : (
                 <>
                   {widgets.map((w, i) => (
-                    <div
-                      key={w.id}
-                      className={`cwrap${selId === w.id ? ' sel-ring' : ''}`}
-                      style={{
-                        gridColumn: `span ${w.data.colSpan ?? 4}`,
-                        minHeight: w.data.height ? w.data.height + 'px' : undefined,
-                      }}
-                      onClick={e => { e.stopPropagation(); onSelect(w.id) }}
-                    >
-                      <WidgetRenderer widget={w} sampleData={sampleData} isSelected={selId === w.id} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
-                      <div className="wov">
-                        {i > 0 && (
-                          <button className="wob wob-mv" title="Subir"
-                            onClick={e => { e.stopPropagation(); onMove(w.id, -1) }}>
-                            <i className="ti ti-chevron-up" aria-hidden="true" />
+                    <div key={w.id} style={{ display: 'contents' }}>
+                      <div
+                        className={`cwrap${selId === w.id ? ' sel-ring' : ''}`}
+                        style={{
+                          gridColumn: `span ${w.data.colSpan ?? 4}`,
+                          minHeight: w.data.height ? w.data.height + 'px' : undefined,
+                        }}
+                        onClick={e => { e.stopPropagation(); onSelect(w.id) }}
+                      >
+                        <WidgetRenderer widget={w} sampleData={sampleData} isSelected={selId === w.id} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
+                        <div className="wov">
+                          {i > 0 && (
+                            <button className="wob wob-mv" title="Subir"
+                              onClick={e => { e.stopPropagation(); onMove(w.id, -1) }}>
+                              <i className="ti ti-chevron-up" aria-hidden="true" />
+                            </button>
+                          )}
+                          {i < widgets.length - 1 && (
+                            <button className="wob wob-mv" title="Bajar"
+                              onClick={e => { e.stopPropagation(); onMove(w.id, 1) }}>
+                              <i className="ti ti-chevron-down" aria-hidden="true" />
+                            </button>
+                          )}
+                          <button className="wob wob-del" title="Eliminar"
+                            onClick={e => { e.stopPropagation(); onDelete(w.id) }}>
+                            <i className="ti ti-x" aria-hidden="true" />
                           </button>
-                        )}
-                        {i < widgets.length - 1 && (
-                          <button className="wob wob-mv" title="Bajar"
-                            onClick={e => { e.stopPropagation(); onMove(w.id, 1) }}>
-                            <i className="ti ti-chevron-down" aria-hidden="true" />
-                          </button>
-                        )}
-                        <button className="wob wob-del" title="Eliminar"
-                          onClick={e => { e.stopPropagation(); onDelete(w.id) }}>
-                          <i className="ti ti-x" aria-hidden="true" />
-                        </button>
+                        </div>
+                        <ResizeHandle widget={w} canvasRef={canvasRef} onResize={onResize} />
                       </div>
-                      <ResizeHandle widget={w} canvasRef={canvasRef} onResize={onResize} />
+                      {rowSlots[i] > 0 && (
+                        <DropZone
+                          key={`dz-${w.id}`}
+                          dragTypeRef={dragTypeRef}
+                          onAdd={type => onAdd(type, i)}
+                          colSpan={rowSlots[i]}
+                          compact
+                        />
+                      )}
                     </div>
                   ))}
-                  <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} compact />
+                  {rowSlots[widgets.length - 1] === 0 && (
+                    <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} colSpan={4} compact />
+                  )}
                 </>
               )}
           </div>

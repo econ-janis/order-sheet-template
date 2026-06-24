@@ -88,16 +88,9 @@ const HEADER_COL_KEYS = ['left', 'center', 'right']
 
 function Header({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
   const d = w.data
-  const cols = d.columns || { left: ['logo'], center: [], right: ['date', 'control', 'orderNum'] }
+  const cols = d.columns || { left: [], center: [], right: ['date', 'control', 'orderNum'] }
 
   const FIELDS = {
-    logo:     () => (
-      <div className="w-logo-box logo-full">
-        {v.logoUrl
-          ? <img src={v.logoUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="Logo" />
-          : v.storeName || 'Logo'}
-      </div>
-    ),
     date:     () => d.showDate     && <span>Fecha de emisión: <b>{v.date}</b></span>,
     control:  () => d.showControl  && <span>Control de entrega N°: <b>{v.orderNum}</b></span>,
     orderNum: () => d.showOrderNum && <span>Número de factura</span>,

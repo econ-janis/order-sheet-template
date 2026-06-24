@@ -2,8 +2,8 @@ export const WIDGET_TYPES = [
   {
     type: 'header',
     icon: 'ti ti-building-store',
-    name: 'Header + Logo',
-    sub: 'Logo, N° pedido, fecha',
+    name: 'Header',
+    sub: 'N° pedido, fecha, control',
     hbs: '{{order.commerceSequentialId}}',
   },
   {
@@ -58,7 +58,7 @@ export const WIDGET_TYPES = [
 ]
 
 export const WDEF = {
-  header:   { logoUrl: '', showOrderNum: true, showDate: true, showControl: true, columns: { left: ['logo'], center: [], right: ['date', 'control', 'orderNum'] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },
+  header:   { showOrderNum: true, showDate: true, showControl: true, columns: { left: [], center: [], right: ['date', 'control', 'orderNum'] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },
   logo:     { imageUrl: '', objectFit: 'contain', height: 80, colSpan: 4 },
   client:   { showName: true, showCI: true, showPhone: true, showAddress: true, showPayment: true, columns: { left: ['name', 'ci', 'phone'], right: ['address', 'payment'] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },
   dispatch: { showLogistic: true, showType: true, showDate: true, showAddress: true, bgColor: '#f0f4ff', accentColor: '#4a6cf7', columns: { left: ['logistic', 'type'], right: ['date', 'address'] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },

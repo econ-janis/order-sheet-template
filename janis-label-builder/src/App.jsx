@@ -17,9 +17,14 @@ export default function App() {
 
   useEffect(() => { setSelFieldKey(null) }, [selId])
 
-  function addWidget(type) {
+  function addWidget(type, afterIndex = -1) {
     const w = { id: uid(), type, data: JSON.parse(JSON.stringify(WDEF[type])) }
-    setWidgets(prev => [...prev, w])
+    setWidgets(prev => {
+      if (afterIndex < 0 || afterIndex >= prev.length) return [...prev, w]
+      const arr = [...prev]
+      arr.splice(afterIndex + 1, 0, w)
+      return arr
+    })
     setSelId(w.id)
   }
 
