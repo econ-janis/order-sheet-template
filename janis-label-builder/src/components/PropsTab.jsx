@@ -36,7 +36,7 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
   const hasColumns = WIDGETS_WITH_COLUMNS.includes(selWidget.type)
 
   return (
-    <div className="parea">
+    <div className="parea" key={selWidget.id}>
       {/* 1. Dimensiones */}
       <div className="pgroup">
         <div className="pgt">Dimensiones</div>
