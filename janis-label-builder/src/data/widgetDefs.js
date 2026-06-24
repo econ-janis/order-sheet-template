@@ -55,7 +55,7 @@ export const WDEF = {
   client:   { showName: true, showCI: true, showPhone: true, showAddress: true, showPayment: true, columns: { left: ['name', 'ci', 'phone'], right: ['address', 'payment'] }, height: null, fieldStyles: {}, customFields: {} },
   dispatch: { showLogistic: true, showType: true, showDate: true, showAddress: true, bgColor: '#f0f4ff', accentColor: '#4a6cf7', columns: { left: ['logistic', 'type'], right: ['date', 'address'] }, height: null, fieldStyles: {}, customFields: {} },
   products: { showSubst: true, showPrice: true, showOrigQty: true, showFinalQty: true, locale: 'es-AR', currency: 'ARS', height: null },
-  footer:   { storeName: '', phone: '', website: '', message: 'Gracias por tu compra', dark: true, columns: { left: ['name', 'phone', 'web'], right: ['msg'] }, height: null, fieldStyles: {}, customFields: {} },
+  footer:   { storeName: '', phone: '', website: '', message: 'Gracias por tu compra', dark: true, mode: 'columns', imageUrl: '', columns: { left: ['name', 'phone', 'web'], right: ['msg'] }, height: null, fieldStyles: {}, customFields: {} },
   divider:  { style: 'solid', color: '#e8e8e8', height: null },
   text:     { content: 'Información importante del pedido', fontSize: 10, height: null },
 }
@@ -83,6 +83,8 @@ export const PLABELS = {
   website: 'Sitio web',
   message: 'Mensaje',
   dark: 'Fondo oscuro',
+  mode: 'Modo footer',
+  imageUrl: 'URL de imagen',
   style: 'Estilo línea',
   color: 'Color',
   bgColor: 'Color de fondo',

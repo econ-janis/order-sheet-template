@@ -116,7 +116,22 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
         {Object.entries(selWidget.data).map(([k, v]) => {
           if (Array.isArray(v) || (v !== null && typeof v === 'object')) return null
           if (k === 'height') return null
+          if (k === 'imageUrl' && selWidget.data.mode !== 'image') return null
           const lbl = PLABELS[k] || k
+          if (k === 'mode') {
+            return (
+              <div key={k} className="prow">
+                <label>{lbl}</label>
+                <select
+                  defaultValue={v}
+                  onChange={e => onUpdateProp(selWidget.id, k, e.target.value)}
+                >
+                  <option value="columns">2 columnas</option>
+                  <option value="image">Imagen completa</option>
+                </select>
+              </div>
+            )
+          }
           if (typeof v === 'boolean') {
             return (
               <div key={k} className="prow prow-inline">

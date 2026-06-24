@@ -137,6 +137,7 @@
 .w-products tr.tot td { font-weight: 500; background: #fafafa; border-top: 1px solid #eee; }
 
 .w-footer { padding: 7px 14px; display: flex; align-items: center; justify-content: space-between; }
+.w-footer-img { padding: 0; min-height: 48px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .wft { font-size: 9px; line-height: 1.6; }
 
 .w-divider { padding: 3px 14px; }

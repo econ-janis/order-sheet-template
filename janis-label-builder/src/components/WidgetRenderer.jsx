@@ -264,6 +264,16 @@ function Footer({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
   const bg = d.dark ? '#1a1a1a' : '#f8f8f8'
   const c  = { name: d.dark ? '#fff' : '#111', text: d.dark ? '#aaa' : '#555', msg: d.dark ? '#666' : '#aaa' }
 
+  if (d.mode === 'image') {
+    return (
+      <div className="w-footer w-footer-img" style={{ background: bg }}>
+        {d.imageUrl
+          ? <img src={d.imageUrl} alt="Footer" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          : <span style={{ color: '#888', fontSize: 10 }}>Ingresá una URL de imagen en Propiedades</span>}
+      </div>
+    )
+  }
+
   // Footer builtin fields need c, so wrap them
   const FOOTER_BUILTIN = {
     name:  (d, v) => FOOTER_FIELDS.name(d, v, c),
