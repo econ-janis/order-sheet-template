@@ -4,7 +4,7 @@ import { resolveWidgetData, fmtCurrency } from '../utils/helpers'
 /* ── Two-column drag & drop layout ── */
 function TwoColumnDrop({ columns, onColumnsChange, renderField, wrapClass, wrapStyle }) {
   const dragging = useRef(null)
-  const [overSlot, setOverSlot] = useState(null) // { col, key|null }
+  const [overSlot, setOverSlot] = useState(null)
 
   function isOver(col, key) {
     return overSlot?.col === col && overSlot?.key === (key ?? null)
@@ -15,12 +15,12 @@ function TwoColumnDrop({ columns, onColumnsChange, renderField, wrapClass, wrapS
     const { key, fromCol } = dragging.current
     if (key === targetKey) { dragging.current = null; setOverSlot(null); return }
 
-    const next = { left: [...columns.left], right: [...columns.right] }
+    const next = { left: [...(columns.left || [])], right: [...(columns.right || [])] }
     next[fromCol] = next[fromCol].filter(k => k !== key)
 
     if (targetKey) {
       const idx = next[targetCol].indexOf(targetKey)
-      next[targetCol].splice(idx, 0, key)
+      next[targetCol].splice(idx >= 0 ? idx : next[targetCol].length, 0, key)
     } else {
       next[targetCol].push(key)
     }
@@ -30,34 +30,34 @@ function TwoColumnDrop({ columns, onColumnsChange, renderField, wrapClass, wrapS
     setOverSlot(null)
   }
 
-  function colProps(colName) {
+  function colZone(colName) {
     return {
       className: `col-zone${isOver(colName, null) ? ' col-zone-over' : ''}`,
-      onDragOver: e => { e.preventDefault(); e.stopPropagation(); setOverSlot({ col: colName, key: null }) },
+      onDragOver:  e => { e.preventDefault(); e.stopPropagation(); setOverSlot({ col: colName, key: null }) },
       onDragLeave: () => setOverSlot(null),
-      onDrop: e => { e.preventDefault(); e.stopPropagation(); drop(colName, null) },
+      onDrop:      e => { e.preventDefault(); e.stopPropagation(); drop(colName, null) },
     }
   }
 
-  function itemProps(colName, key) {
+  function itemDrag(colName, key) {
     return {
       className: `dlist-item${isOver(colName, key) ? ' dlist-over' : ''}`,
       draggable: true,
       onDragStart: e => { dragging.current = { key, fromCol: colName }; e.stopPropagation() },
-      onDragEnd: () => { dragging.current = null; setOverSlot(null) },
-      onDragOver: e => { e.preventDefault(); e.stopPropagation(); setOverSlot({ col: colName, key }) },
+      onDragEnd:   () => { dragging.current = null; setOverSlot(null) },
+      onDragOver:  e => { e.preventDefault(); e.stopPropagation(); setOverSlot({ col: colName, key }) },
       onDragLeave: () => setOverSlot(null),
-      onDrop: e => { e.preventDefault(); e.stopPropagation(); drop(colName, key) },
+      onDrop:      e => { e.preventDefault(); e.stopPropagation(); drop(colName, key) },
     }
   }
 
   return (
     <div className={`two-col-drop ${wrapClass || ''}`} style={wrapStyle}>
       {['left', 'right'].map(col => (
-        <div key={col} {...colProps(col)}>
-          <div className="col-label">{col === 'left' ? 'Col. izquierda' : 'Col. derecha'}</div>
+        <div key={col} {...colZone(col)}>
+          <div className="col-label">{col === 'left' ? 'Columna izq.' : 'Columna der.'}</div>
           {(columns[col] || []).map(k => (
-            <div key={k} {...itemProps(col, k)}>
+            <div key={k} {...itemDrag(col, k)}>
               <span className="drag-handle"><i className="ti ti-grip-vertical" /></span>
               <div className="dlist-content">{renderField(k)}</div>
             </div>
@@ -68,77 +68,42 @@ function TwoColumnDrop({ columns, onColumnsChange, renderField, wrapClass, wrapS
   )
 }
 
-/* ── Single-column drag list (header meta) ── */
-function DragList({ keys, onReorder, renderItem, className, style }) {
-  const dragKey = useRef(null)
-  const [overKey, setOverKey] = useState(null)
-
-  function drop(targetKey) {
-    if (!dragKey.current || dragKey.current === targetKey) return
-    const from = keys.indexOf(dragKey.current)
-    const to   = keys.indexOf(targetKey)
-    const next = [...keys]
-    next.splice(from, 1)
-    next.splice(to, 0, dragKey.current)
-    onReorder(next)
-    dragKey.current = null; setOverKey(null)
-  }
-
-  return (
-    <div className={className} style={style}>
-      {keys.map(k => (
-        <div key={k}
-          className={`dlist-item${overKey === k ? ' dlist-over' : ''}`}
-          draggable
-          onDragStart={e => { dragKey.current = k; e.stopPropagation() }}
-          onDragEnd={() => { dragKey.current = null; setOverKey(null) }}
-          onDragOver={e => { e.preventDefault(); e.stopPropagation(); setOverKey(k) }}
-          onDragLeave={() => setOverKey(null)}
-          onDrop={e => { e.preventDefault(); e.stopPropagation(); drop(k) }}
-        >
-          <span className="drag-handle"><i className="ti ti-grip-vertical" /></span>
-          <div className="dlist-content">{renderItem(k)}</div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 /* ── Header ── */
 function Header({ w, v, isSelected, onReorder }) {
   const d = w.data
-  const metaOrder = d.metaOrder || ['date', 'control', 'orderNum']
-  const logoSide  = d.logoSide || 'left'
+  const cols = d.columns || { left: ['logo'], right: ['date', 'control', 'orderNum'] }
 
-  const metaItems = {
-    date:     d.showDate     && <span>Fecha de emisión: <b>{v.date}</b></span>,
-    control:  d.showControl  && <span>Control de entrega N°: <b>{v.orderNum}</b></span>,
-    orderNum: d.showOrderNum && <span>Número de factura</span>,
+  const FIELDS = {
+    logo:     () => (
+      <div className="w-logo-box" style={{ height: 32, width: 70 }}>
+        {v.logoUrl
+          ? <img src={v.logoUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="Logo" />
+          : v.storeName || 'Logo'}
+      </div>
+    ),
+    date:     () => d.showDate     && <span>Fecha de emisión: <b>{v.date}</b></span>,
+    control:  () => d.showControl  && <span>Control de entrega N°: <b>{v.orderNum}</b></span>,
+    orderNum: () => d.showOrderNum && <span>Número de factura</span>,
   }
 
-  const logoBox = (
-    <div
-      className="w-logo-box"
-      style={isSelected ? { cursor: 'pointer', position: 'relative' } : undefined}
-      title={isSelected ? 'Click para cambiar posición' : undefined}
-      onClick={isSelected ? e => { e.stopPropagation(); onReorder(w.id, 'logoSide', logoSide === 'left' ? 'right' : 'left') } : undefined}
-    >
-      {v.logoUrl
-        ? <img src={v.logoUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="Logo" />
-        : v.storeName || 'Logo'}
-      {isSelected && <span className="logo-flip-hint">{logoSide === 'left' ? '→' : '←'}</span>}
-    </div>
-  )
+  if (isSelected) {
+    return (
+      <TwoColumnDrop
+        columns={cols}
+        onColumnsChange={next => onReorder(w.id, 'columns', next)}
+        wrapClass="w-header-reorder"
+        renderField={k => FIELDS[k]?.() || <span className="field-hidden">{k}</span>}
+      />
+    )
+  }
 
-  const meta = isSelected
-    ? <DragList keys={metaOrder} onReorder={next => onReorder(w.id, 'metaOrder', next)}
-        className="w-header-meta" style={{ display: 'flex', flexDirection: 'column', gap: 3 }}
-        renderItem={k => metaItems[k] || null} />
-    : <div className="w-header-meta">{metaOrder.map(k => metaItems[k] || null)}</div>
+  const leftItems  = (cols.left  || []).map(k => FIELDS[k]?.()).filter(Boolean)
+  const rightItems = (cols.right || []).map(k => FIELDS[k]?.()).filter(Boolean)
 
   return (
-    <div className="w-header" style={{ flexDirection: logoSide === 'right' ? 'row-reverse' : 'row' }}>
-      {logoBox}{meta}
+    <div className="w-header">
+      <div className="w-header-col">{leftItems}</div>
+      <div className="w-header-col w-header-col-right">{rightItems}</div>
     </div>
   )
 }
@@ -170,10 +135,10 @@ function Client({ w, v, isSelected, onReorder }) {
   return (
     <div className="w-client-2col">
       <div className="w-col">
-        {cols.left.map(k => { const el = CLIENT_FIELDS[k]?.(d, v); return el ? <div key={k}>{el}</div> : null })}
+        {(cols.left || []).map(k => { const el = CLIENT_FIELDS[k]?.(d, v); return el ? <div key={k}>{el}</div> : null })}
       </div>
       <div className="w-col">
-        {cols.right.map(k => { const el = CLIENT_FIELDS[k]?.(d, v); return el ? <div key={k}>{el}</div> : null })}
+        {(cols.right || []).map(k => { const el = CLIENT_FIELDS[k]?.(d, v); return el ? <div key={k}>{el}</div> : null })}
       </div>
     </div>
   )
@@ -205,11 +170,13 @@ function Dispatch({ w, v, isSelected, onReorder }) {
   }
 
   return (
-    <div className="w-dispatch" style={style}>
-      {[...cols.left, ...cols.right].map(k => {
-        const el = DISPATCH_FIELDS[k]?.(d, v)
-        return el ? <div key={k}>{el}</div> : null
-      })}
+    <div className="w-dispatch-2col" style={style}>
+      <div className="w-col">
+        {(cols.left || []).map(k => { const el = DISPATCH_FIELDS[k]?.(d, v); return el ? <div key={k}>{el}</div> : null })}
+      </div>
+      <div className="w-col">
+        {(cols.right || []).map(k => { const el = DISPATCH_FIELDS[k]?.(d, v); return el ? <div key={k}>{el}</div> : null })}
+      </div>
     </div>
   )
 }
@@ -278,10 +245,10 @@ function Footer({ w, v, isSelected, onReorder }) {
   return (
     <div className="w-footer" style={{ background: bg }}>
       <div className="w-col" style={{ color: c.text }}>
-        {cols.left.map(k => { const el = FOOTER_FIELDS[k]?.(d, v, c); return el ? <div key={k}>{el}</div> : null })}
+        {(cols.left || []).map(k => { const el = FOOTER_FIELDS[k]?.(d, v, c); return el ? <div key={k}>{el}</div> : null })}
       </div>
       <div className="w-col" style={{ color: c.text, textAlign: 'right' }}>
-        {cols.right.map(k => { const el = FOOTER_FIELDS[k]?.(d, v, c); return el ? <div key={k}>{el}</div> : null })}
+        {(cols.right || []).map(k => { const el = FOOTER_FIELDS[k]?.(d, v, c); return el ? <div key={k}>{el}</div> : null })}
       </div>
     </div>
   )

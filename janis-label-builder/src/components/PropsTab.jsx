@@ -27,7 +27,7 @@ export default function PropsTab({ selWidget, onUpdateProp }) {
       <div className="pgroup">
         <div className="pgt">Widget: {selWidget.type}</div>
         {Object.entries(selWidget.data).map(([k, v]) => {
-          if (Array.isArray(v)) return null
+          if (Array.isArray(v) || (v !== null && typeof v === 'object')) return null
           const lbl = PLABELS[k] || k
           if (typeof v === 'boolean') {
             return (
