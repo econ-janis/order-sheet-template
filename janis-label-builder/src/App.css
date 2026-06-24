@@ -72,7 +72,12 @@
   background: #fff;
   box-shadow: 0 1px 8px rgba(0,0,0,.1);
   width: 100%; max-width: 480px; min-height: 360px;
-  display: flex; flex-direction: column;
+}
+.lcgrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: start;
+  width: 100%;
 }
 .dropzone {
   min-height: 60px; border: 1.5px dashed #d0d0d0; border-radius: 3px;
@@ -88,8 +93,17 @@
 .empty-c p { font-size: 12px; }
 
 /* ── Canvas widget wrapper ── */
-.cwrap { position: relative; }
+.cwrap { position: relative; min-height: 20px; }
 .cwrap:hover .wov { opacity: 1; }
+.cwrap:hover .resize-handle { opacity: 1; }
+.resize-handle {
+  position: absolute; bottom: 2px; right: 2px;
+  width: 16px; height: 16px; cursor: se-resize;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(74,108,247,.85); border-radius: 3px;
+  color: #fff; opacity: 0; transition: opacity .12s; z-index: 12;
+}
+.sel-ring .resize-handle { opacity: 1; }
 .wov {
   position: absolute; top: 3px; right: 3px;
   display: flex; gap: 3px; opacity: 0; transition: opacity .12s; z-index: 10;
@@ -138,6 +152,9 @@
 
 .w-footer { padding: 7px 14px; display: flex; align-items: center; justify-content: space-between; }
 .w-footer-img { padding: 0; min-height: 48px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.w-logo-widget { width: 100%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #f5f5f5; }
+.w-logo-placeholder { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #bbb; font-size: 10px; padding: 12px; }
+.w-logo-placeholder i { font-size: 22px; }
 .wft { font-size: 9px; line-height: 1.6; }
 
 .w-divider { padding: 3px 14px; }

@@ -50,6 +50,16 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
             onInput={e => onUpdateProp(selWidget.id, 'height', e.target.value ? +e.target.value : null)}
           />
         </div>
+        <div className="prow">
+          <label>Ancho (col 1–4)</label>
+          <input
+            type="number"
+            defaultValue={selWidget.data.colSpan ?? 4}
+            min={1}
+            max={4}
+            onInput={e => onUpdateProp(selWidget.id, 'colSpan', Math.max(1, Math.min(4, +e.target.value)))}
+          />
+        </div>
       </div>
 
       {/* 2. Campo seleccionado */}
@@ -115,9 +125,24 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
         <div className="pgt">Widget: {selWidget.type}</div>
         {Object.entries(selWidget.data).map(([k, v]) => {
           if (Array.isArray(v) || (v !== null && typeof v === 'object')) return null
-          if (k === 'height') return null
-          if (k === 'imageUrl' && selWidget.data.mode !== 'image') return null
+          if (k === 'height' || k === 'colSpan') return null
+          if (k === 'imageUrl' && selWidget.data.mode !== 'image' && selWidget.type !== 'logo') return null
           const lbl = PLABELS[k] || k
+          if (k === 'objectFit') {
+            return (
+              <div key={k} className="prow">
+                <label>{lbl}</label>
+                <select
+                  defaultValue={v}
+                  onChange={e => onUpdateProp(selWidget.id, k, e.target.value)}
+                >
+                  <option value="contain">Contener</option>
+                  <option value="cover">Cubrir</option>
+                  <option value="fill">Estirar</option>
+                </select>
+              </div>
+            )
+          }
           if (k === 'mode') {
             return (
               <div key={k} className="prow">

@@ -50,6 +50,12 @@ export default function App() {
     )
   }
 
+  function resizeWidget(id, colSpan, height) {
+    setWidgets(prev =>
+      prev.map(w => w.id === id ? { ...w, data: { ...w.data, colSpan, height } } : w)
+    )
+  }
+
   function clearCanvas() {
     setWidgets([])
     setSelId(null)
@@ -100,6 +106,7 @@ export default function App() {
         onSelect={setSelId}
         onClear={clearCanvas}
         onReorder={reorderField}
+        onResize={resizeWidget}
         selFieldKey={selFieldKey}
         onFieldSelect={setSelFieldKey}
       />

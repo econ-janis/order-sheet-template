@@ -310,12 +310,24 @@ function Footer({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
   )
 }
 
+/* ── Logo ── */
+function Logo({ d }) {
+  return (
+    <div className="w-logo-widget" style={{ height: d.height ? d.height + 'px' : '80px' }}>
+      {d.imageUrl
+        ? <img src={d.imageUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: d.objectFit || 'contain', display: 'block' }} />
+        : <div className="w-logo-placeholder"><i className="ti ti-photo" /><span>URL de imagen en Propiedades</span></div>}
+    </div>
+  )
+}
+
 /* ── Main export ── */
 export default function WidgetRenderer({ widget, sampleData, isSelected, onReorder, selFieldKey, onFieldSelect }) {
   const d = widget.data
   const v = resolveWidgetData(widget, sampleData)
 
   if (widget.type === 'header')   return <Header   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
+  if (widget.type === 'logo')     return <Logo d={d} />
   if (widget.type === 'client')   return <Client   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
   if (widget.type === 'dispatch') return <Dispatch w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
   if (widget.type === 'products') return <Products d={d} v={v} />

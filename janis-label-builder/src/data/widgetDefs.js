@@ -7,6 +7,13 @@ export const WIDGET_TYPES = [
     hbs: '{{order.commerceSequentialId}}',
   },
   {
+    type: 'logo',
+    icon: 'ti ti-photo',
+    name: 'Logo / Imagen',
+    sub: 'Imagen libre, URL',
+    hbs: null,
+  },
+  {
     type: 'client',
     icon: 'ti ti-user-circle',
     name: 'Datos del cliente',
@@ -51,17 +58,20 @@ export const WIDGET_TYPES = [
 ]
 
 export const WDEF = {
-  header:   { logoUrl: '', showOrderNum: true, showDate: true, showControl: true, columns: { left: ['logo'], center: [], right: ['date', 'control', 'orderNum'] }, height: null, fieldStyles: {}, customFields: {} },
-  client:   { showName: true, showCI: true, showPhone: true, showAddress: true, showPayment: true, columns: { left: ['name', 'ci', 'phone'], right: ['address', 'payment'] }, height: null, fieldStyles: {}, customFields: {} },
-  dispatch: { showLogistic: true, showType: true, showDate: true, showAddress: true, bgColor: '#f0f4ff', accentColor: '#4a6cf7', columns: { left: ['logistic', 'type'], right: ['date', 'address'] }, height: null, fieldStyles: {}, customFields: {} },
-  products: { showSubst: true, showPrice: true, showOrigQty: true, showFinalQty: true, locale: 'es-AR', currency: 'ARS', height: null },
-  footer:   { storeName: '', phone: '', website: '', message: 'Gracias por tu compra', dark: true, mode: 'columns', imageUrl: '', columns: { left: ['name', 'phone', 'web'], right: ['msg'] }, height: null, fieldStyles: {}, customFields: {} },
-  divider:  { style: 'solid', color: '#e8e8e8', height: null },
-  text:     { content: 'Información importante del pedido', fontSize: 10, height: null },
+  header:   { logoUrl: '', showOrderNum: true, showDate: true, showControl: true, columns: { left: ['logo'], center: [], right: ['date', 'control', 'orderNum'] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },
+  logo:     { imageUrl: '', objectFit: 'contain', height: 80, colSpan: 4 },
+  client:   { showName: true, showCI: true, showPhone: true, showAddress: true, showPayment: true, columns: { left: ['name', 'ci', 'phone'], right: ['address', 'payment'] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },
+  dispatch: { showLogistic: true, showType: true, showDate: true, showAddress: true, bgColor: '#f0f4ff', accentColor: '#4a6cf7', columns: { left: ['logistic', 'type'], right: ['date', 'address'] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },
+  products: { showSubst: true, showPrice: true, showOrigQty: true, showFinalQty: true, locale: 'es-AR', currency: 'ARS', height: null, colSpan: 4 },
+  footer:   { storeName: '', phone: '', website: '', message: 'Gracias por tu compra', dark: true, mode: 'columns', imageUrl: '', columns: { left: ['name', 'phone', 'web'], right: ['msg'] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },
+  divider:  { style: 'solid', color: '#e8e8e8', height: null, colSpan: 4 },
+  text:     { content: 'Información importante del pedido', fontSize: 10, height: null, colSpan: 4 },
 }
 
 export const PLABELS = {
   logoUrl: 'URL del logo',
+  imageUrl: 'URL de imagen',
+  objectFit: 'Ajuste imagen',
   showOrderNum: 'Mostrar N° factura',
   showDate: 'Mostrar fecha',
   showControl: 'Mostrar N° control',
@@ -84,7 +94,6 @@ export const PLABELS = {
   message: 'Mensaje',
   dark: 'Fondo oscuro',
   mode: 'Modo footer',
-  imageUrl: 'URL de imagen',
   style: 'Estilo línea',
   color: 'Color',
   bgColor: 'Color de fondo',
@@ -99,6 +108,7 @@ export const HBS_BY_TYPE = {
     '{{formatDate order.creationDate "dd/MM/yyyy"}}',
     '{{root.store.name}}',
   ],
+  logo: [],
   client: [
     '{{order.clientProfileData.firstName}}',
     '{{order.clientProfileData.document}}',
