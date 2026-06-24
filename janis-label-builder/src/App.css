@@ -200,19 +200,47 @@
 /* ── Internal drag-to-reorder ── */
 .dlist-item {
   display: flex; align-items: center; gap: 4px;
-  transition: background .1s;
+  border-radius: 3px; transition: background .1s; padding: 1px 2px;
 }
-.dlist-item.dlist-over { background: rgba(74,108,247,.08); border-radius: 3px; }
+.dlist-item.dlist-over { background: rgba(74,108,247,.12); outline: 1.5px dashed #4a6cf7; }
 .drag-handle {
   flex-shrink: 0; cursor: grab; color: #bbb; font-size: 12px;
   padding: 2px 1px; line-height: 1;
 }
 .drag-handle:active { cursor: grabbing; }
 .dlist-content { flex: 1; min-width: 0; }
+.field-hidden { font-size: 9px; color: #ccc; font-style: italic; }
 
-.w-client-reorder   { display: flex; flex-direction: column; gap: 3px; padding: 8px 14px; background: #fff; border-bottom: 1px solid #f2f2f2; }
-.w-dispatch-reorder { display: flex; flex-direction: column; gap: 3px; padding: 7px 14px; border-bottom: 1px solid #e8e8e8; }
-.w-footer-reorder   { display: flex; flex-direction: column; gap: 3px; padding: 7px 14px; }
+/* Two-column drop layout */
+.two-col-drop {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+  padding: 8px 10px;
+}
+.col-zone {
+  display: flex; flex-direction: column; gap: 3px;
+  min-height: 48px; padding: 5px 6px;
+  border: 1.5px dashed #d8d8d8; border-radius: 5px;
+  background: rgba(255,255,255,.5); transition: all .1s;
+}
+.col-zone.col-zone-over { border-color: #4a6cf7; background: rgba(74,108,247,.06); }
+.col-label {
+  font-size: 8px; font-weight: 500; color: #bbb;
+  text-transform: uppercase; letter-spacing: .06em;
+  padding-bottom: 4px; margin-bottom: 2px;
+  border-bottom: 0.5px solid #eee;
+}
+
+/* Non-selected 2-col renders */
+.w-client-2col {
+  display: flex; gap: 14px; padding: 8px 14px;
+  background: #fff; border-bottom: 1px solid #f2f2f2;
+}
+.w-col { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+
+/* Reorder wrappers */
+.w-client-reorder   { background: #fff; border-bottom: 1px solid #f2f2f2; }
+.w-dispatch-reorder { border-bottom: 1px solid #e8e8e8; }
+.w-footer-reorder   {}
 
 .logo-flip-hint {
   position: absolute; bottom: 2px; right: 4px;

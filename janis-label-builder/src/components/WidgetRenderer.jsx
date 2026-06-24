@@ -1,12 +1,79 @@
 import { useRef, useState } from 'react'
 import { resolveWidgetData, fmtCurrency } from '../utils/helpers'
 
-/* ── Drag-to-reorder list ── */
+/* ── Two-column drag & drop layout ── */
+function TwoColumnDrop({ columns, onColumnsChange, renderField, wrapClass, wrapStyle }) {
+  const dragging = useRef(null)
+  const [overSlot, setOverSlot] = useState(null) // { col, key|null }
+
+  function isOver(col, key) {
+    return overSlot?.col === col && overSlot?.key === (key ?? null)
+  }
+
+  function drop(targetCol, targetKey) {
+    if (!dragging.current) return
+    const { key, fromCol } = dragging.current
+    if (key === targetKey) { dragging.current = null; setOverSlot(null); return }
+
+    const next = { left: [...columns.left], right: [...columns.right] }
+    next[fromCol] = next[fromCol].filter(k => k !== key)
+
+    if (targetKey) {
+      const idx = next[targetCol].indexOf(targetKey)
+      next[targetCol].splice(idx, 0, key)
+    } else {
+      next[targetCol].push(key)
+    }
+
+    onColumnsChange(next)
+    dragging.current = null
+    setOverSlot(null)
+  }
+
+  function colProps(colName) {
+    return {
+      className: `col-zone${isOver(colName, null) ? ' col-zone-over' : ''}`,
+      onDragOver: e => { e.preventDefault(); e.stopPropagation(); setOverSlot({ col: colName, key: null }) },
+      onDragLeave: () => setOverSlot(null),
+      onDrop: e => { e.preventDefault(); e.stopPropagation(); drop(colName, null) },
+    }
+  }
+
+  function itemProps(colName, key) {
+    return {
+      className: `dlist-item${isOver(colName, key) ? ' dlist-over' : ''}`,
+      draggable: true,
+      onDragStart: e => { dragging.current = { key, fromCol: colName }; e.stopPropagation() },
+      onDragEnd: () => { dragging.current = null; setOverSlot(null) },
+      onDragOver: e => { e.preventDefault(); e.stopPropagation(); setOverSlot({ col: colName, key }) },
+      onDragLeave: () => setOverSlot(null),
+      onDrop: e => { e.preventDefault(); e.stopPropagation(); drop(colName, key) },
+    }
+  }
+
+  return (
+    <div className={`two-col-drop ${wrapClass || ''}`} style={wrapStyle}>
+      {['left', 'right'].map(col => (
+        <div key={col} {...colProps(col)}>
+          <div className="col-label">{col === 'left' ? 'Col. izquierda' : 'Col. derecha'}</div>
+          {(columns[col] || []).map(k => (
+            <div key={k} {...itemProps(col, k)}>
+              <span className="drag-handle"><i className="ti ti-grip-vertical" /></span>
+              <div className="dlist-content">{renderField(k)}</div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ── Single-column drag list (header meta) ── */
 function DragList({ keys, onReorder, renderItem, className, style }) {
   const dragKey = useRef(null)
   const [overKey, setOverKey] = useState(null)
 
-  function handleDrop(targetKey) {
+  function drop(targetKey) {
     if (!dragKey.current || dragKey.current === targetKey) return
     const from = keys.indexOf(dragKey.current)
     const to   = keys.indexOf(targetKey)
@@ -14,25 +81,22 @@ function DragList({ keys, onReorder, renderItem, className, style }) {
     next.splice(from, 1)
     next.splice(to, 0, dragKey.current)
     onReorder(next)
-    setOverKey(null)
+    dragKey.current = null; setOverKey(null)
   }
 
   return (
     <div className={className} style={style}>
       {keys.map(k => (
-        <div
-          key={k}
+        <div key={k}
           className={`dlist-item${overKey === k ? ' dlist-over' : ''}`}
           draggable
           onDragStart={e => { dragKey.current = k; e.stopPropagation() }}
           onDragEnd={() => { dragKey.current = null; setOverKey(null) }}
           onDragOver={e => { e.preventDefault(); e.stopPropagation(); setOverKey(k) }}
           onDragLeave={() => setOverKey(null)}
-          onDrop={e => { e.preventDefault(); e.stopPropagation(); handleDrop(k) }}
+          onDrop={e => { e.preventDefault(); e.stopPropagation(); drop(k) }}
         >
-          <span className="drag-handle" title="Mover">
-            <i className="ti ti-grip-vertical" />
-          </span>
+          <span className="drag-handle"><i className="ti ti-grip-vertical" /></span>
           <div className="dlist-content">{renderItem(k)}</div>
         </div>
       ))}
@@ -47,53 +111,34 @@ function Header({ w, v, isSelected, onReorder }) {
   const logoSide  = d.logoSide || 'left'
 
   const metaItems = {
-    date:     d.showDate    && <span key="date">Fecha de emisión: <b>{v.date}</b></span>,
-    control:  d.showControl && <span key="control">Control de entrega N°: <b>{v.orderNum}</b></span>,
-    orderNum: d.showOrderNum && <span key="orderNum">Número de factura</span>,
+    date:     d.showDate     && <span>Fecha de emisión: <b>{v.date}</b></span>,
+    control:  d.showControl  && <span>Control de entrega N°: <b>{v.orderNum}</b></span>,
+    orderNum: d.showOrderNum && <span>Número de factura</span>,
   }
 
   const logoBox = (
-    <div className="w-logo-box">
+    <div
+      className="w-logo-box"
+      style={isSelected ? { cursor: 'pointer', position: 'relative' } : undefined}
+      title={isSelected ? 'Click para cambiar posición' : undefined}
+      onClick={isSelected ? e => { e.stopPropagation(); onReorder(w.id, 'logoSide', logoSide === 'left' ? 'right' : 'left') } : undefined}
+    >
       {v.logoUrl
         ? <img src={v.logoUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="Logo" />
         : v.storeName || 'Logo'}
+      {isSelected && <span className="logo-flip-hint">{logoSide === 'left' ? '→' : '←'}</span>}
     </div>
   )
 
-  const metaSection = isSelected
-    ? (
-      <DragList
-        keys={metaOrder}
-        onReorder={next => onReorder(w.id, 'metaOrder', next)}
-        className="w-header-meta"
-        style={{ display: 'flex', flexDirection: 'column', gap: 2 }}
-        renderItem={k => metaItems[k] || null}
-      />
-    )
-    : (
-      <div className="w-header-meta">
-        {metaOrder.map(k => metaItems[k] || null)}
-      </div>
-    )
+  const meta = isSelected
+    ? <DragList keys={metaOrder} onReorder={next => onReorder(w.id, 'metaOrder', next)}
+        className="w-header-meta" style={{ display: 'flex', flexDirection: 'column', gap: 3 }}
+        renderItem={k => metaItems[k] || null} />
+    : <div className="w-header-meta">{metaOrder.map(k => metaItems[k] || null)}</div>
 
   return (
     <div className="w-header" style={{ flexDirection: logoSide === 'right' ? 'row-reverse' : 'row' }}>
-      {isSelected
-        ? (
-          <div
-            className="w-logo-box"
-            style={{ cursor: 'pointer', position: 'relative' }}
-            title="Click para cambiar posición del logo"
-            onClick={e => { e.stopPropagation(); onReorder(w.id, 'logoSide', logoSide === 'left' ? 'right' : 'left') }}
-          >
-            {v.logoUrl
-              ? <img src={v.logoUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="Logo" />
-              : v.storeName || 'Logo'}
-            <span className="logo-flip-hint">{logoSide === 'left' ? '→' : '←'}</span>
-          </div>
-        )
-        : logoBox}
-      {metaSection}
+      {logoBox}{meta}
     </div>
   )
 }
@@ -103,31 +148,33 @@ const CLIENT_FIELDS = {
   name:    (d, v) => d.showName    && <div className="wcf"><label>Nombre y apellido</label><span>{v.name}</span></div>,
   ci:      (d, v) => d.showCI      && <div className="wcf"><label>C.I.</label><span>{v.ci}</span></div>,
   phone:   (d, v) => d.showPhone   && <div className="wcf"><label>Teléfono</label><span>{v.phone}</span></div>,
-  address: (d, v) => d.showAddress && <div className="wcf" style={{ gridColumn: '1/-1' }}><label>Dirección</label><span>{v.address}</span></div>,
-  payment: (d, v) => d.showPayment && <div className="wcf" style={{ gridColumn: '1/-1' }}><label>Forma de pago</label><span>{v.payment}</span></div>,
+  address: (d, v) => d.showAddress && <div className="wcf"><label>Dirección</label><span>{v.address}</span></div>,
+  payment: (d, v) => d.showPayment && <div className="wcf"><label>Forma de pago</label><span>{v.payment}</span></div>,
 }
 
 function Client({ w, v, isSelected, onReorder }) {
   const d = w.data
-  const order = d.fieldOrder || ['name', 'ci', 'phone', 'address', 'payment']
+  const cols = d.columns || { left: ['name', 'ci', 'phone'], right: ['address', 'payment'] }
 
   if (isSelected) {
     return (
-      <DragList
-        keys={order}
-        onReorder={next => onReorder(w.id, 'fieldOrder', next)}
-        className="w-client w-client-reorder"
-        renderItem={k => CLIENT_FIELDS[k]?.(d, v) || <span style={{ color: '#ccc', fontSize: 9 }}>{k} (oculto)</span>}
+      <TwoColumnDrop
+        columns={cols}
+        onColumnsChange={next => onReorder(w.id, 'columns', next)}
+        wrapClass="w-client-reorder"
+        renderField={k => CLIENT_FIELDS[k]?.(d, v) || <span className="field-hidden">{k}</span>}
       />
     )
   }
 
   return (
-    <div className="w-client">
-      {order.map(k => {
-        const el = CLIENT_FIELDS[k]?.(d, v)
-        return el ? <div key={k}>{el}</div> : null
-      })}
+    <div className="w-client-2col">
+      <div className="w-col">
+        {cols.left.map(k => { const el = CLIENT_FIELDS[k]?.(d, v); return el ? <div key={k}>{el}</div> : null })}
+      </div>
+      <div className="w-col">
+        {cols.right.map(k => { const el = CLIENT_FIELDS[k]?.(d, v); return el ? <div key={k}>{el}</div> : null })}
+      </div>
     </div>
   )
 }
@@ -142,24 +189,24 @@ const DISPATCH_FIELDS = {
 
 function Dispatch({ w, v, isSelected, onReorder }) {
   const d = w.data
-  const order = d.fieldOrder || ['logistic', 'type', 'date', 'address']
+  const cols = d.columns || { left: ['logistic', 'type'], right: ['date', 'address'] }
   const style = { background: d.bgColor, borderTop: `2px solid ${d.accentColor}`, borderBottom: `2px solid ${d.accentColor}` }
 
   if (isSelected) {
     return (
-      <DragList
-        keys={order}
-        onReorder={next => onReorder(w.id, 'fieldOrder', next)}
-        className="w-dispatch w-dispatch-reorder"
-        style={style}
-        renderItem={k => DISPATCH_FIELDS[k]?.(d, v) || <span style={{ color: '#ccc', fontSize: 9 }}>{k} (oculto)</span>}
+      <TwoColumnDrop
+        columns={cols}
+        onColumnsChange={next => onReorder(w.id, 'columns', next)}
+        wrapClass="w-dispatch-reorder"
+        wrapStyle={style}
+        renderField={k => DISPATCH_FIELDS[k]?.(d, v) || <span className="field-hidden">{k}</span>}
       />
     )
   }
 
   return (
     <div className="w-dispatch" style={style}>
-      {order.map(k => {
+      {[...cols.left, ...cols.right].map(k => {
         const el = DISPATCH_FIELDS[k]?.(d, v)
         return el ? <div key={k}>{el}</div> : null
       })}
@@ -204,38 +251,37 @@ function Products({ d, v }) {
 
 /* ── Footer ── */
 const FOOTER_FIELDS = {
-  name:  (d, v, colors) => <div key="name" style={{ fontWeight: 600, color: colors.name, fontSize: 10 }}>{v.name}</div>,
-  phone: (d, v, colors) => v.phone && <div key="phone" style={{ color: colors.text, fontSize: 9 }}>Tel: {v.phone}</div>,
-  web:   (d, v, colors) => v.web   && <div key="web"   style={{ color: colors.text, fontSize: 9 }}>{v.web}</div>,
-  msg:   (d, v, colors) => v.msg   && <div key="msg"   style={{ color: colors.msg,  fontSize: 9 }}>{v.msg}</div>,
+  name:  (d, v, c) => <div style={{ fontWeight: 600, color: c.name, fontSize: 10 }}>{v.name}</div>,
+  phone: (d, v, c) => v.phone && <div style={{ color: c.text, fontSize: 9 }}>Tel: {v.phone}</div>,
+  web:   (d, v, c) => v.web   && <div style={{ color: c.text, fontSize: 9 }}>{v.web}</div>,
+  msg:   (d, v, c) => v.msg   && <div style={{ color: c.msg,  fontSize: 9 }}>{v.msg}</div>,
 }
 
 function Footer({ w, v, isSelected, onReorder }) {
   const d = w.data
-  const order = d.fieldOrder || ['name', 'phone', 'web', 'msg']
+  const cols = d.columns || { left: ['name', 'phone', 'web'], right: ['msg'] }
   const bg = d.dark ? '#1a1a1a' : '#f8f8f8'
-  const colors = {
-    name: d.dark ? '#fff' : '#111',
-    text: d.dark ? '#aaa' : '#555',
-    msg:  d.dark ? '#666' : '#aaa',
-  }
+  const c  = { name: d.dark ? '#fff' : '#111', text: d.dark ? '#aaa' : '#555', msg: d.dark ? '#666' : '#aaa' }
 
   if (isSelected) {
     return (
-      <DragList
-        keys={order}
-        onReorder={next => onReorder(w.id, 'fieldOrder', next)}
-        className="w-footer w-footer-reorder"
-        style={{ background: bg }}
-        renderItem={k => FOOTER_FIELDS[k]?.(d, v, colors) || <span style={{ color: '#ccc', fontSize: 9 }}>{k} (oculto)</span>}
+      <TwoColumnDrop
+        columns={cols}
+        onColumnsChange={next => onReorder(w.id, 'columns', next)}
+        wrapClass="w-footer-reorder"
+        wrapStyle={{ background: bg }}
+        renderField={k => FOOTER_FIELDS[k]?.(d, v, c) || <span className="field-hidden">{k}</span>}
       />
     )
   }
 
   return (
     <div className="w-footer" style={{ background: bg }}>
-      <div className="wft" style={{ color: colors.text }}>
-        {order.map(k => FOOTER_FIELDS[k]?.(d, v, colors))}
+      <div className="w-col" style={{ color: c.text }}>
+        {cols.left.map(k => { const el = FOOTER_FIELDS[k]?.(d, v, c); return el ? <div key={k}>{el}</div> : null })}
+      </div>
+      <div className="w-col" style={{ color: c.text, textAlign: 'right' }}>
+        {cols.right.map(k => { const el = FOOTER_FIELDS[k]?.(d, v, c); return el ? <div key={k}>{el}</div> : null })}
       </div>
     </div>
   )

@@ -52,10 +52,10 @@ export const WIDGET_TYPES = [
 
 export const WDEF = {
   header:   { logoUrl: '', showOrderNum: true, showDate: true, showControl: true, logoSide: 'left', metaOrder: ['date', 'control', 'orderNum'] },
-  client:   { showName: true, showCI: true, showPhone: true, showAddress: true, showPayment: true, fieldOrder: ['name', 'ci', 'phone', 'address', 'payment'] },
-  dispatch: { showLogistic: true, showType: true, showDate: true, showAddress: true, bgColor: '#f0f4ff', accentColor: '#4a6cf7', fieldOrder: ['logistic', 'type', 'date', 'address'] },
+  client:   { showName: true, showCI: true, showPhone: true, showAddress: true, showPayment: true, columns: { left: ['name', 'ci', 'phone'], right: ['address', 'payment'] } },
+  dispatch: { showLogistic: true, showType: true, showDate: true, showAddress: true, bgColor: '#f0f4ff', accentColor: '#4a6cf7', columns: { left: ['logistic', 'type'], right: ['date', 'address'] } },
   products: { showSubst: true, showPrice: true, showOrigQty: true, showFinalQty: true, locale: 'es-AR', currency: 'ARS' },
-  footer:   { storeName: '', phone: '', website: '', message: 'Gracias por tu compra', dark: true, fieldOrder: ['name', 'phone', 'web', 'msg'] },
+  footer:   { storeName: '', phone: '', website: '', message: 'Gracias por tu compra', dark: true, columns: { left: ['name', 'phone', 'web'], right: ['msg'] } },
   divider:  { style: 'solid', color: '#e8e8e8' },
   text:     { content: 'Información importante del pedido', fontSize: 10 },
 }
