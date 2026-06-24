@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, Fragment } from 'react'
 import WidgetRenderer from './WidgetRenderer'
 import { genHbs, esc } from '../utils/helpers'
 
@@ -8,19 +8,20 @@ const SIZE_MAP = {
   label: { minHeight: '260px', maxWidth: '300px' },
 }
 
-/* Shared drag state: either a new-type drag or an existing-widget drag */
-function useSharedDrop(dragTypeRef, dragWidgetRef, onAdd, onMoveTo, afterIndex) {
+function DropZone({ dragTypeRef, dragWidgetRef, onAdd, onMoveTo, afterIndex = -1, colSpan = 4, compact }) {
   const ref = useRef(null)
   const [over, setOver] = useState(false)
 
   function handleDragOver(e) {
-    if (!dragTypeRef.current && !dragWidgetRef.current) return
-    e.preventDefault()
+    e.preventDefault()   // always allow drop
     e.stopPropagation()
     setOver(true)
   }
 
-  function handleDragLeave() { setOver(false) }
+  function handleDragLeave(e) {
+    // only clear 'over' when cursor truly leaves the zone (not entering a child)
+    if (!ref.current?.contains(e.relatedTarget)) setOver(false)
+  }
 
   function handleDrop(e) {
     e.preventDefault()
@@ -35,13 +36,6 @@ function useSharedDrop(dragTypeRef, dragWidgetRef, onAdd, onMoveTo, afterIndex) 
     }
   }
 
-  return { ref, over, handleDragOver, handleDragLeave, handleDrop }
-}
-
-function DropZone({ dragTypeRef, dragWidgetRef, onAdd, onMoveTo, afterIndex = -1, colSpan = 4, compact }) {
-  const { ref, over, handleDragOver, handleDragLeave, handleDrop } =
-    useSharedDrop(dragTypeRef, dragWidgetRef, onAdd, onMoveTo, afterIndex)
-
   return (
     <div
       ref={ref}
@@ -52,7 +46,7 @@ function DropZone({ dragTypeRef, dragWidgetRef, onAdd, onMoveTo, afterIndex = -1
       onDrop={handleDrop}
     >
       {compact
-        ? <span style={{ fontSize: 10, color: over ? '#4a6cf7' : '#ccc' }}>+ soltar aquí</span>
+        ? <span style={{ fontSize: 10, color: over ? '#4a6cf7' : '#ccc', pointerEvents: 'none' }}>+ soltar aquí</span>
         : (
           <div className="empty-c">
             <i className="ti ti-drag-drop" aria-hidden="true" />
@@ -63,7 +57,7 @@ function DropZone({ dragTypeRef, dragWidgetRef, onAdd, onMoveTo, afterIndex = -1
   )
 }
 
-/* Resize handle – drag right/left changes colSpan (1-4), drag down/up changes height */
+/* Resize handle */
 function ResizeHandle({ widget, canvasRef, onResize }) {
   const startRef = useRef(null)
 
@@ -124,7 +118,6 @@ function exportHbs(widgets) {
   )
 }
 
-/* compute remaining columns after each widget */
 function buildRowSlots(widgets) {
   const result = []
   let col = 0
@@ -185,7 +178,8 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
               : (
                 <>
                   {widgets.map((w, i) => (
-                    <div key={w.id} style={{ display: 'contents' }}>
+                    // Fragment with key avoids wrapper div breaking the CSS grid
+                    <Fragment key={w.id}>
                       <div
                         className={`cwrap${selId === w.id ? ' sel-ring' : ''}`}
                         draggable
@@ -224,7 +218,6 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                       </div>
                       {rowSlots[i] > 0 && (
                         <DropZone
-                          key={`dz-${w.id}`}
                           dragTypeRef={dragTypeRef}
                           dragWidgetRef={dragWidgetRef}
                           onAdd={onAdd}
@@ -234,7 +227,7 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                           compact
                         />
                       )}
-                    </div>
+                    </Fragment>
                   ))}
                   {rowSlots[widgets.length - 1] === 0 && (
                     <DropZone
