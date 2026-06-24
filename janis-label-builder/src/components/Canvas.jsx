@@ -8,28 +8,25 @@ const SIZE_MAP = {
   label: { minHeight: '260px', maxWidth: '300px' },
 }
 
-function DropZone({ dragTypeRef, dragWidgetRef, onAdd, onMoveTo, afterIndex = -1, colSpan = 4, compact }) {
+/* Drop zone: accepts BOTH native palette drags and pointer-based canvas-widget drags. */
+function DropZone({ dragTypeRef, onAdd, afterIndex = -1, colSpan = 4, compact, dragActive }) {
   const ref = useRef(null)
   const [over, setOver] = useState(false)
 
+  // native (palette) drop handlers
   function handleDragOver(e) {
     e.preventDefault()
     e.stopPropagation()
     setOver(true)
   }
-
   function handleDragLeave(e) {
     if (!ref.current?.contains(e.relatedTarget)) setOver(false)
   }
-
   function handleDrop(e) {
     e.preventDefault()
     e.stopPropagation()
     setOver(false)
-    if (dragWidgetRef.current) {
-      onMoveTo(dragWidgetRef.current, afterIndex)
-      dragWidgetRef.current = null
-    } else if (dragTypeRef.current) {
+    if (dragTypeRef.current) {
       onAdd(dragTypeRef.current, afterIndex)
       dragTypeRef.current = null
     }
@@ -38,7 +35,8 @@ function DropZone({ dragTypeRef, dragWidgetRef, onAdd, onMoveTo, afterIndex = -1
   return (
     <div
       ref={ref}
-      className={`dropzone${over ? ' over' : ''}`}
+      className={`dropzone${over ? ' over' : ''}${dragActive ? ' dz-active' : ''}`}
+      data-after-index={afterIndex}
       style={{ gridColumn: `span ${colSpan}`, ...(compact ? { minHeight: 32, margin: 4 } : {}) }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -47,7 +45,7 @@ function DropZone({ dragTypeRef, dragWidgetRef, onAdd, onMoveTo, afterIndex = -1
       {compact
         ? <span style={{ fontSize: 10, color: over ? '#4a6cf7' : '#ccc', pointerEvents: 'none' }}>+ soltar aquí</span>
         : (
-          <div className="empty-c">
+          <div className="empty-c" style={{ pointerEvents: 'none' }}>
             <i className="ti ti-drag-drop" aria-hidden="true" />
             <p>Arrastrá widgets aquí</p>
           </div>
@@ -81,13 +79,11 @@ function ResizeHandle({ widget, canvasRef, onResize }) {
       const newHeight = Math.max(20, Math.round(initHeight + dy))
       onResize(widget.id, newColSpan, newHeight)
     }
-
     function onUp() {
       document.removeEventListener('mousemove', onMove)
       document.removeEventListener('mouseup', onUp)
       startRef.current = null
     }
-
     document.addEventListener('mousemove', onMove)
     document.addEventListener('mouseup', onUp)
   }
@@ -124,12 +120,8 @@ function buildRowSlots(widgets) {
     const span = w.data.colSpan ?? 4
     col += span
     const remainder = col % 4
-    if (remainder === 0) {
-      result.push(0)
-      col = 0
-    } else {
-      result.push(4 - remainder)
-    }
+    if (remainder === 0) { result.push(0); col = 0 }
+    else { result.push(4 - remainder) }
   }
   return result
 }
@@ -137,7 +129,10 @@ function buildRowSlots(widgets) {
 export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onDelete, onMove, onMoveTo, onSelect, onClear, onReorder, onResize, selFieldKey, onFieldSelect }) {
   const sizeRef = useRef(null)
   const canvasRef = useRef(null)
-  const dragWidgetRef = useRef(null)
+  // pointer-drag state for moving an existing canvas widget
+  const [dragId, setDragId] = useState(null)
+  const [ghost, setGhost] = useState(null) // {x, y, label}
+  const dragStateRef = useRef(null)
 
   function onSizeChange(e) {
     const s = SIZE_MAP[e.target.value] || SIZE_MAP.a4
@@ -147,7 +142,48 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
     }
   }
 
+  function highlightZoneAt(x, y) {
+    // clear previous
+    document.querySelectorAll('.dropzone.dz-hot').forEach(el => el.classList.remove('dz-hot'))
+    const el = document.elementFromPoint(x, y)
+    const zone = el?.closest('.dropzone')
+    if (zone) zone.classList.add('dz-hot')
+    return zone
+  }
+
+  function startWidgetDrag(id, label, e) {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragId(id)
+    setGhost({ x: e.clientX, y: e.clientY, label })
+    dragStateRef.current = { id, zone: null }
+    document.body.style.userSelect = 'none'
+
+    function onMove(ev) {
+      setGhost({ x: ev.clientX, y: ev.clientY, label })
+      const zone = highlightZoneAt(ev.clientX, ev.clientY)
+      dragStateRef.current.zone = zone
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      document.body.style.userSelect = ''
+      const zone = dragStateRef.current?.zone
+      if (zone) {
+        const afterIndex = parseInt(zone.getAttribute('data-after-index'), 10)
+        onMoveTo(dragStateRef.current.id, afterIndex)
+      }
+      document.querySelectorAll('.dropzone.dz-hot').forEach(el => el.classList.remove('dz-hot'))
+      dragStateRef.current = null
+      setDragId(null)
+      setGhost(null)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
+
   const rowSlots = buildRowSlots(widgets)
+  const dragActive = dragId !== null
 
   return (
     <div className="panel panel-center">
@@ -171,35 +207,29 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
 
       <div className="carea">
         <div className="lcanvas" ref={sizeRef}>
-          <div className="lcgrid" ref={canvasRef} onClick={() => onSelect(null)}>
+          <div className={`lcgrid${dragActive ? ' grid-dragging' : ''}`} ref={canvasRef} onClick={() => onSelect(null)}>
             {widgets.length === 0
-              ? <DropZone dragTypeRef={dragTypeRef} dragWidgetRef={dragWidgetRef} onAdd={onAdd} onMoveTo={onMoveTo} afterIndex={-1} colSpan={4} />
+              ? <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={-1} colSpan={4} />
               : (
                 <>
                   {widgets.map((w, i) => (
                     <Fragment key={w.id}>
                       <div
-                        className={`cwrap${selId === w.id ? ' sel-ring' : ''}`}
+                        className={`cwrap${selId === w.id ? ' sel-ring' : ''}${dragId === w.id ? ' cwrap-dragging' : ''}`}
                         style={{
                           gridColumn: `span ${w.data.colSpan ?? 4}`,
                           minHeight: w.data.height ? w.data.height + 'px' : undefined,
                         }}
                         onClick={e => { e.stopPropagation(); onSelect(w.id) }}
                       >
-                        {/* Dedicated move handle – only this element initiates canvas-to-canvas drag */}
+                        {/* Dedicated move handle – pointer drag to reorder */}
                         <div
                           className="cwrap-move-handle"
-                          draggable
-                          title="Mover widget"
-                          onDragStart={e => {
-                            dragWidgetRef.current = w.id
-                            dragTypeRef.current = null
-                            e.stopPropagation()
-                          }}
-                          onDragEnd={() => { dragWidgetRef.current = null }}
+                          title="Mantené presionado y arrastrá para mover"
+                          onMouseDown={e => startWidgetDrag(w.id, w.type, e)}
                           onClick={e => e.stopPropagation()}
                         >
-                          <i className="ti ti-grip-horizontal" style={{ fontSize: 10, pointerEvents: 'none' }} />
+                          <i className="ti ti-arrows-move" style={{ fontSize: 11, pointerEvents: 'none' }} /> mover
                         </div>
 
                         <WidgetRenderer widget={w} sampleData={sampleData} isSelected={selId === w.id} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
@@ -226,32 +256,35 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                       {rowSlots[i] > 0 && (
                         <DropZone
                           dragTypeRef={dragTypeRef}
-                          dragWidgetRef={dragWidgetRef}
                           onAdd={onAdd}
-                          onMoveTo={onMoveTo}
                           afterIndex={i}
                           colSpan={rowSlots[i]}
                           compact
+                          dragActive={dragActive}
                         />
                       )}
                     </Fragment>
                   ))}
-                  {rowSlots[widgets.length - 1] === 0 && (
-                    <DropZone
-                      dragTypeRef={dragTypeRef}
-                      dragWidgetRef={dragWidgetRef}
-                      onAdd={onAdd}
-                      onMoveTo={onMoveTo}
-                      afterIndex={widgets.length - 1}
-                      colSpan={4}
-                      compact
-                    />
-                  )}
+                  {/* trailing full-width drop zone (always present so there's a target after the last row) */}
+                  <DropZone
+                    dragTypeRef={dragTypeRef}
+                    onAdd={onAdd}
+                    afterIndex={widgets.length - 1}
+                    colSpan={4}
+                    compact
+                    dragActive={dragActive}
+                  />
                 </>
               )}
           </div>
         </div>
       </div>
+
+      {ghost && (
+        <div className="drag-ghost" style={{ left: ghost.x + 12, top: ghost.y + 12 }}>
+          <i className="ti ti-arrows-move" style={{ fontSize: 11 }} /> {ghost.label}
+        </div>
+      )}
     </div>
   )
 }

@@ -104,15 +104,36 @@
   color: #fff; opacity: 0; transition: opacity .12s; z-index: 12;
 }
 .sel-ring .resize-handle { opacity: 1; }
-/* Move handle – always visible at top of widget, used for canvas-to-canvas drag */
+/* Move handle – grab to reorder widget (pointer-based drag) */
 .cwrap-move-handle {
   position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-  z-index: 11; cursor: grab; background: rgba(74,108,247,.85);
-  color: #fff; border-radius: 0 0 4px 4px; padding: 1px 8px;
-  opacity: 0; transition: opacity .12s;
+  z-index: 13; cursor: grab; background: #4a6cf7;
+  color: #fff; border-radius: 0 0 5px 5px; padding: 2px 10px;
+  font-size: 10px; font-weight: 600; line-height: 1.4;
+  display: flex; align-items: center; gap: 3px;
+  opacity: 0; transition: opacity .12s; white-space: nowrap;
 }
-.cwrap:hover .cwrap-move-handle { opacity: 1; }
+.cwrap:hover .cwrap-move-handle,
+.sel-ring .cwrap-move-handle { opacity: 1; }
 .cwrap-move-handle:active { cursor: grabbing; }
+.cwrap-dragging { opacity: .4; }
+
+/* Drag ghost following the cursor */
+.drag-ghost {
+  position: fixed; z-index: 9999; pointer-events: none;
+  background: #4a6cf7; color: #fff; font-size: 10px; font-weight: 600;
+  padding: 4px 9px; border-radius: 5px; display: flex; align-items: center; gap: 4px;
+  box-shadow: 0 3px 12px rgba(0,0,0,.25);
+}
+
+/* Drop zones become prominent while a canvas widget is being dragged */
+.dropzone.dz-active {
+  min-height: 46px; border-color: #4a6cf7; background: #f5f5ff; color: #4a6cf7;
+}
+.dropzone.dz-hot {
+  border-color: #4a6cf7; border-width: 2px; background: #e8ecff; color: #4a6cf7;
+  transform: scale(1.01);
+}
 .wov {
   position: absolute; top: 3px; right: 3px;
   display: flex; gap: 3px; opacity: 0; transition: opacity .12s; z-index: 10;
