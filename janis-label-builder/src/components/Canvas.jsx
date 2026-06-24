@@ -1,4 +1,4 @@
-import { useRef, useState, Fragment } from 'react'
+import { useRef, useState, useEffect, Fragment } from 'react'
 import WidgetRenderer from './WidgetRenderer'
 import { genHbs, esc } from '../utils/helpers'
 
@@ -107,17 +107,22 @@ function buildRowSlots(widgets) {
   return result
 }
 
-export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onDelete, onMove, onMoveTo, onSplit, onSelect, onClear, onReorder, onResize, selFieldKey, onFieldSelect }) {
+export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onAddBeside, onDelete, onMove, onMoveTo, onSplit, onSelect, onClear, onReorder, onResize, selFieldKey, onFieldSelect }) {
   const sizeRef = useRef(null)
   const canvasRef = useRef(null)
   const [dragId, setDragId] = useState(null)
   const [ghost, setGhost] = useState(null)        // {x, y, label}
   const [hotKey, setHotKey] = useState(null)       // which drop zone is highlighted
   const [splitKey, setSplitKey] = useState(null)  // which widget's split zone is hot
+  const [nativeDrag, setNativeDrag] = useState(false) // palette drag hovering the canvas
+  const [paper, setPaper] = useState('a4')         // current paper size key
+  const [showPreview, setShowPreview] = useState(false)
   const dragStateRef = useRef(null)
 
   function onSizeChange(e) {
-    const s = SIZE_MAP[e.target.value] || SIZE_MAP.a4
+    const val = e.target.value
+    setPaper(val)
+    const s = SIZE_MAP[val] || SIZE_MAP.a4
     if (sizeRef.current) {
       sizeRef.current.style.minHeight = s.minHeight
       sizeRef.current.style.maxWidth = s.maxWidth
@@ -170,14 +175,26 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
     document.addEventListener('mouseup', onUp)
   }
 
+  // When "Descargar PDF" is pressed we open the preview in print mode and fire
+  // the browser print dialog (user saves as PDF) once it has rendered.
+  useEffect(() => {
+    if (showPreview !== 'print') return
+    const onAfter = () => setShowPreview(false)
+    window.addEventListener('afterprint', onAfter)
+    const t = setTimeout(() => window.print(), 250)
+    return () => { clearTimeout(t); window.removeEventListener('afterprint', onAfter) }
+  }, [showPreview])
+
   const rowSlots = buildRowSlots(widgets)
   const dragActive = dragId !== null
+  const paperStyle = SIZE_MAP[paper] || SIZE_MAP.a4
+  const paperRowSlots = buildRowSlots(widgets)
 
   return (
     <div className="panel panel-center">
       <div className="ctoolbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <select className="sz-select" onChange={onSizeChange}>
+          <select className="sz-select" value={paper} onChange={onSizeChange}>
             <option value="a4">A4</option>
             <option value="half">Media carta</option>
             <option value="label">Etiqueta 10×15</option>
@@ -187,15 +204,28 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
           <button className="tbtn" onClick={onClear}>
             <i className="ti ti-trash" style={{ fontSize: 12 }} aria-hidden="true" /> Limpiar
           </button>
-          <button className="tbtn pri" onClick={() => exportHbs(widgets)}>
+          <button className="tbtn" onClick={() => widgets.length ? setShowPreview(true) : alert('Agregá al menos un widget.')}>
+            <i className="ti ti-eye" style={{ fontSize: 12 }} aria-hidden="true" /> Preview
+          </button>
+          <button className="tbtn" onClick={() => exportHbs(widgets)}>
             <i className="ti ti-code" style={{ fontSize: 12 }} aria-hidden="true" /> Exportar HBS
+          </button>
+          <button className="tbtn pri" onClick={() => widgets.length ? setShowPreview('print') : alert('Agregá al menos un widget.')}>
+            <i className="ti ti-download" style={{ fontSize: 12 }} aria-hidden="true" /> Descargar PDF
           </button>
         </div>
       </div>
 
       <div className="carea">
         <div className="lcanvas" ref={sizeRef}>
-          <div className={`lcgrid${dragActive ? ' grid-dragging' : ''}`} ref={canvasRef} onClick={() => onSelect(null)}>
+          <div
+            className={`lcgrid${dragActive ? ' grid-dragging' : ''}`}
+            ref={canvasRef}
+            onClick={() => onSelect(null)}
+            onDragOver={() => { if (dragTypeRef.current) { setNativeDrag(true) } }}
+            onDragLeave={e => { if (!canvasRef.current?.contains(e.relatedTarget)) setNativeDrag(false) }}
+            onDrop={() => setNativeDrag(false)}
+          >
             {widgets.length === 0
               ? <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={-1} colSpan={4} zoneKey="empty" variant="empty" />
               : (
@@ -226,10 +256,20 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                         </div>
 
                         <WidgetRenderer widget={w} sampleData={sampleData} isSelected={selId === w.id} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
-                        {dragActive && dragId !== w.id && (
+                        {((dragActive && dragId !== w.id) || nativeDrag) && (
                           <div
                             className={`split-zone${splitKey === w.id ? ' sz-hot' : ''}`}
                             data-split-zone={w.id}
+                            onDragOver={e => { if (dragTypeRef.current) { e.preventDefault(); e.stopPropagation(); setSplitKey(w.id) } }}
+                            onDragLeave={() => setSplitKey(null)}
+                            onDrop={e => {
+                              if (dragTypeRef.current) {
+                                e.preventDefault(); e.stopPropagation()
+                                onAddBeside(w.id, dragTypeRef.current)
+                                dragTypeRef.current = null
+                                setSplitKey(null); setNativeDrag(false)
+                              }
+                            }}
                           />
                         )}
                         <div className="wov">
@@ -278,6 +318,38 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
       {ghost && (
         <div className="drag-ghost" style={{ left: ghost.x + 12, top: ghost.y + 12 }}>
           <i className="ti ti-arrows-move" style={{ fontSize: 11 }} /> {ghost.label}
+        </div>
+      )}
+
+      {showPreview && (
+        <div className="preview-overlay" onClick={() => setShowPreview(false)}>
+          <div className="preview-modal" onClick={e => e.stopPropagation()}>
+            <div className="preview-bar">
+              <span><i className="ti ti-eye" style={{ fontSize: 13 }} /> Vista previa real</span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button className="tbtn pri" onClick={() => window.print()}>
+                  <i className="ti ti-download" style={{ fontSize: 12 }} /> Descargar PDF
+                </button>
+                <button className="tbtn" onClick={() => setShowPreview(false)}>
+                  <i className="ti ti-x" style={{ fontSize: 12 }} /> Cerrar
+                </button>
+              </div>
+            </div>
+            <div className="preview-scroll">
+              <div className="preview-paper" style={{ maxWidth: paperStyle.maxWidth, minHeight: paperStyle.minHeight }}>
+                <div className="lcgrid">
+                  {widgets.map((w, i) => (
+                    <Fragment key={w.id}>
+                      <div style={{ gridColumn: `span ${w.data.colSpan ?? 4}`, minHeight: w.data.height ? w.data.height + 'px' : undefined }}>
+                        <WidgetRenderer widget={w} sampleData={sampleData} isSelected={false} onReorder={onReorder} />
+                      </div>
+                      {paperRowSlots[i] > 0 && <div style={{ gridColumn: `span ${paperRowSlots[i]}` }} />}
+                    </Fragment>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

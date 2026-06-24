@@ -87,6 +87,20 @@ export default function App() {
     })
   }
 
+  function addBeside(targetId, type) {
+    const w = { id: uid(), type, data: JSON.parse(JSON.stringify(WDEF[type])) }
+    w.data.colSpan = 2
+    setWidgets(prev => {
+      const arr = [...prev]
+      const i = arr.findIndex(x => x.id === targetId)
+      if (i === -1) return [...prev, w]
+      arr[i] = { ...arr[i], data: { ...arr[i].data, colSpan: 2 } }
+      arr.splice(i + 1, 0, w)
+      return arr
+    })
+    setSelId(w.id)
+  }
+
   function clearCanvas() {
     setWidgets([])
     setSelId(null)
@@ -140,6 +154,7 @@ export default function App() {
         onResize={resizeWidget}
         onMoveTo={moveWidgetTo}
         onSplit={splitWidgets}
+        onAddBeside={addBeside}
         selFieldKey={selFieldKey}
         onFieldSelect={setSelFieldKey}
       />

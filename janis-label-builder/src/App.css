@@ -383,3 +383,48 @@
   color: var(--color-text-secondary); white-space: pre-wrap; word-break: break-all;
   overflow-y: auto; flex: 1; min-height: 100px;
 }
+
+/* ── Preview modal ── */
+.preview-overlay {
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(20, 22, 30, 0.55); backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.preview-modal {
+  background: #f3f4f8; border-radius: 10px; overflow: hidden;
+  width: 100%; max-width: 760px; max-height: 92vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 12px 48px rgba(0,0,0,.35);
+}
+.preview-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: #fff; border-bottom: 1px solid #e6e8ee;
+  font-size: 12px; font-weight: 600; color: #333;
+}
+.preview-bar span { display: flex; align-items: center; gap: 5px; }
+.preview-scroll { overflow: auto; padding: 24px; display: flex; justify-content: center; }
+.preview-paper {
+  background: #fff; width: 100%;
+  box-shadow: 0 2px 14px rgba(0,0,0,.12);
+  padding: 12px;
+}
+.preview-paper .lcgrid {
+  display: grid; grid-template-columns: repeat(4, 1fr); align-items: start; gap: 0;
+}
+
+/* ── Print: only the paper, fit to page ── */
+@media print {
+  body * { visibility: hidden !important; }
+  .preview-paper, .preview-paper * { visibility: visible !important; }
+  .preview-overlay {
+    position: static; background: none; padding: 0; display: block; backdrop-filter: none;
+  }
+  .preview-modal { box-shadow: none; max-height: none; max-width: none; background: #fff; }
+  .preview-bar { display: none !important; }
+  .preview-scroll { overflow: visible; padding: 0; display: block; }
+  .preview-paper {
+    box-shadow: none; margin: 0; max-width: none !important; width: 100% !important;
+    min-height: 0 !important;
+  }
+  @page { margin: 12mm; }
+}
