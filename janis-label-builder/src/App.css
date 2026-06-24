@@ -254,6 +254,39 @@
 .w-dispatch-reorder { border-bottom: 1px solid #e8e8e8; }
 .w-footer-reorder   {}
 
+/* Logo fills full column height in selected mode */
+.col-zone:has(.logo-full) {
+  padding: 0;
+  gap: 0;
+}
+.col-zone:has(.logo-full) .dlist-item {
+  flex: 1;
+  align-items: stretch;
+  padding: 0;
+}
+.col-zone:has(.logo-full) .dlist-content {
+  display: flex;
+  height: 100%;
+}
+.col-zone:has(.logo-full) .w-logo-box {
+  width: 100%;
+  height: 100%;
+  min-height: 48px;
+  border-radius: 0;
+}
+
+/* Logo fills full height in non-selected mode */
+.w-header-col:has(.logo-full) {
+  align-self: stretch;
+  padding: 0;
+}
+.w-header-col:has(.logo-full) .logo-full {
+  width: 100%;
+  height: 100%;
+  min-height: 40px;
+  border-radius: 0;
+}
+
 /* ── JSON / HBS panel ── */
 .json-wrap { display: flex; flex-direction: column; gap: 6px; padding: 8px; flex: 1; overflow: hidden; }
 .json-toolbar { display: flex; gap: 5px; flex-shrink: 0; }

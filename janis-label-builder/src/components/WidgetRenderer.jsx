@@ -80,7 +80,7 @@ function Header({ w, v, isSelected, onReorder }) {
 
   const FIELDS = {
     logo:     () => (
-      <div className="w-logo-box" style={{ height: 32, width: 70 }}>
+      <div className="w-logo-box logo-full">
         {v.logoUrl
           ? <img src={v.logoUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="Logo" />
           : v.storeName || 'Logo'}
