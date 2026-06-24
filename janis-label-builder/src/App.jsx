@@ -41,6 +41,12 @@ export default function App() {
     )
   }
 
+  function reorderField(id, key, newOrder) {
+    setWidgets(prev =>
+      prev.map(w => w.id === id ? { ...w, data: { ...w.data, [key]: newOrder } } : w)
+    )
+  }
+
   function clearCanvas() {
     setWidgets([])
     setSelId(null)
@@ -61,6 +67,7 @@ export default function App() {
         onMove={moveWidget}
         onSelect={setSelId}
         onClear={clearCanvas}
+        onReorder={reorderField}
       />
       <RightPanel
         activeTab={activeTab}

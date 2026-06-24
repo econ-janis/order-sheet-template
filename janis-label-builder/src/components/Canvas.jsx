@@ -51,7 +51,7 @@ function exportHbs(widgets) {
   )
 }
 
-export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onDelete, onMove, onSelect, onClear }) {
+export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onDelete, onMove, onSelect, onClear, onReorder }) {
   const sizeRef = useRef(null)
 
   function onSizeChange(e) {
@@ -94,7 +94,7 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                     className={`cwrap${selId === w.id ? ' sel-ring' : ''}`}
                     onClick={e => { e.stopPropagation(); onSelect(w.id) }}
                   >
-                    <WidgetRenderer widget={w} sampleData={sampleData} />
+                    <WidgetRenderer widget={w} sampleData={sampleData} isSelected={selId === w.id} onReorder={onReorder} />
                     <div className="wov">
                       {i > 0 && (
                         <button className="wob wob-mv" title="Subir"

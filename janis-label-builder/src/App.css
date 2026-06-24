@@ -197,6 +197,28 @@
 .pempty i { font-size: 20px; opacity: .4; }
 .pempty p { font-size: 11px; }
 
+/* ── Internal drag-to-reorder ── */
+.dlist-item {
+  display: flex; align-items: center; gap: 4px;
+  transition: background .1s;
+}
+.dlist-item.dlist-over { background: rgba(74,108,247,.08); border-radius: 3px; }
+.drag-handle {
+  flex-shrink: 0; cursor: grab; color: #bbb; font-size: 12px;
+  padding: 2px 1px; line-height: 1;
+}
+.drag-handle:active { cursor: grabbing; }
+.dlist-content { flex: 1; min-width: 0; }
+
+.w-client-reorder   { display: flex; flex-direction: column; gap: 3px; padding: 8px 14px; background: #fff; border-bottom: 1px solid #f2f2f2; }
+.w-dispatch-reorder { display: flex; flex-direction: column; gap: 3px; padding: 7px 14px; border-bottom: 1px solid #e8e8e8; }
+.w-footer-reorder   { display: flex; flex-direction: column; gap: 3px; padding: 7px 14px; }
+
+.logo-flip-hint {
+  position: absolute; bottom: 2px; right: 4px;
+  font-size: 10px; color: #4a6cf7; font-weight: 600; pointer-events: none;
+}
+
 /* ── JSON / HBS panel ── */
 .json-wrap { display: flex; flex-direction: column; gap: 6px; padding: 8px; flex: 1; overflow: hidden; }
 .json-toolbar { display: flex; gap: 5px; flex-shrink: 0; }
