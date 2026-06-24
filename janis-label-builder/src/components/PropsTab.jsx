@@ -1,5 +1,15 @@
 import { PLABELS, HBS_BY_TYPE } from '../data/widgetDefs'
 
+const WIDGETS_WITH_COLUMNS = ['header', 'client', 'dispatch', 'footer']
+
+const FONT_FAMILIES = [
+  { value: '',                          label: 'Por defecto' },
+  { value: 'Arial, sans-serif',         label: 'Arial' },
+  { value: 'Georgia, serif',            label: 'Georgia' },
+  { value: "'Times New Roman', serif",  label: 'Times New Roman' },
+  { value: "'Courier New', monospace",  label: 'Courier New' },
+]
+
 function copyText(text, el) {
   navigator.clipboard.writeText(text).then(() => {
     const orig = el.innerHTML
@@ -8,7 +18,7 @@ function copyText(text, el) {
   })
 }
 
-export default function PropsTab({ selWidget, onUpdateProp }) {
+export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdateFieldStyle, onUpdateCustomField, onAddCustomField }) {
   if (!selWidget) {
     return (
       <div className="parea">
@@ -21,13 +31,91 @@ export default function PropsTab({ selWidget, onUpdateProp }) {
   }
 
   const hbsList = HBS_BY_TYPE[selWidget.type] || []
+  const fieldStyles = selWidget.data.fieldStyles?.[selFieldKey] || {}
+  const isCustomField = selFieldKey?.startsWith('custom_')
+  const hasColumns = WIDGETS_WITH_COLUMNS.includes(selWidget.type)
 
   return (
     <div className="parea">
+      {/* 1. Dimensiones */}
+      <div className="pgroup">
+        <div className="pgt">Dimensiones</div>
+        <div className="prow">
+          <label>Altura (px)</label>
+          <input
+            type="number"
+            defaultValue={selWidget.data.height || ''}
+            min={20}
+            placeholder="auto"
+            onInput={e => onUpdateProp(selWidget.id, 'height', e.target.value ? +e.target.value : null)}
+          />
+        </div>
+      </div>
+
+      {/* 2. Campo seleccionado */}
+      {selFieldKey && (
+        <div className="pgroup">
+          <div className="pgt">Campo: {selFieldKey}</div>
+
+          {isCustomField && (
+            <div className="prow">
+              <label>Contenido</label>
+              <textarea
+                defaultValue={selWidget.data.customFields?.[selFieldKey]?.content || ''}
+                rows={2}
+                style={{ fontSize: 11, padding: '4px 7px', borderRadius: 4, border: '0.5px solid var(--color-border-secondary)', background: 'var(--color-background-primary)', color: 'var(--color-text-primary)', width: '100%', resize: 'vertical' }}
+                onInput={e => onUpdateCustomField(selWidget.id, selFieldKey, e.target.value)}
+              />
+            </div>
+          )}
+
+          <div className="prow">
+            <label>Fuente</label>
+            <select
+              defaultValue={fieldStyles.fontFamily || ''}
+              onChange={e => onUpdateFieldStyle(selWidget.id, selFieldKey, 'fontFamily', e.target.value || undefined)}
+            >
+              {FONT_FAMILIES.map(f => (
+                <option key={f.value} value={f.value}>{f.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="prow">
+            <label>Tamaño (px)</label>
+            <input
+              type="number"
+              defaultValue={fieldStyles.fontSize || ''}
+              min={8}
+              max={48}
+              placeholder="heredado"
+              onInput={e => onUpdateFieldStyle(selWidget.id, selFieldKey, 'fontSize', e.target.value ? +e.target.value : undefined)}
+            />
+          </div>
+
+          <div className="field-style-bar">
+            <button
+              className={`fsbtn${fieldStyles.fontWeight === 'bold' ? ' on' : ''}`}
+              onClick={() => onUpdateFieldStyle(selWidget.id, selFieldKey, 'fontWeight', fieldStyles.fontWeight === 'bold' ? 'normal' : 'bold')}
+            >
+              <b>N</b>
+            </button>
+            <button
+              className={`fsbtn${fieldStyles.fontStyle === 'italic' ? ' on' : ''}`}
+              onClick={() => onUpdateFieldStyle(selWidget.id, selFieldKey, 'fontStyle', fieldStyles.fontStyle === 'italic' ? 'normal' : 'italic')}
+            >
+              <i>I</i>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Propiedades */}
       <div className="pgroup">
         <div className="pgt">Widget: {selWidget.type}</div>
         {Object.entries(selWidget.data).map(([k, v]) => {
           if (Array.isArray(v) || (v !== null && typeof v === 'object')) return null
+          if (k === 'height') return null
           const lbl = PLABELS[k] || k
           if (typeof v === 'boolean') {
             return (
@@ -73,7 +161,7 @@ export default function PropsTab({ selWidget, onUpdateProp }) {
               <label>{lbl}</label>
               <input
                 type="text"
-                defaultValue={String(v)}
+                defaultValue={String(v ?? '')}
                 onInput={e => onUpdateProp(selWidget.id, k, e.target.value)}
               />
             </div>
@@ -81,6 +169,18 @@ export default function PropsTab({ selWidget, onUpdateProp }) {
         })}
       </div>
 
+      {/* 4. Agregar campo */}
+      {hasColumns && (
+        <button
+          className="tbtn"
+          style={{ fontSize: 11, margin: '2px 0' }}
+          onClick={() => onAddCustomField(selWidget.id)}
+        >
+          + Agregar texto
+        </button>
+      )}
+
+      {/* 5. Helpers */}
       {hbsList.length > 0 && (
         <div className="pgroup">
           <div className="pgt">Helpers disponibles</div>

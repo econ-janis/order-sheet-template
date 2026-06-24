@@ -3,8 +3,19 @@ import { resolveWidgetData, fmtCurrency } from '../utils/helpers'
 
 const COL_LABELS = { left: 'Izquierda', center: 'Centro', right: 'Derecha' }
 
+/* ── Field-level style helper ── */
+function makeRenderField(d, v, builtinFields) {
+  return (k) => {
+    const el = k.startsWith('custom_')
+      ? <div className="w-custom-field">{d.customFields?.[k]?.content || 'Campo de texto'}</div>
+      : builtinFields[k]?.(d, v) || <span className="field-hidden">{k}</span>
+    const s = d.fieldStyles?.[k]
+    return s ? <span style={s}>{el}</span> : el
+  }
+}
+
 /* ── N-column drag & drop layout ── */
-function ColumnDrop({ columns, colKeys = ['left', 'right'], onColumnsChange, renderField, wrapClass, wrapStyle }) {
+function ColumnDrop({ columns, colKeys = ['left', 'right'], onColumnsChange, renderField, wrapClass, wrapStyle, selFieldKey, onFieldSelect }) {
   const dragging = useRef(null)
   const [overSlot, setOverSlot] = useState(null)
 
@@ -44,13 +55,14 @@ function ColumnDrop({ columns, colKeys = ['left', 'right'], onColumnsChange, ren
 
   function itemDrag(colName, key) {
     return {
-      className: `dlist-item${isOver(colName, key) ? ' dlist-over' : ''}`,
+      className: `dlist-item${isOver(colName, key) ? ' dlist-over' : ''}${selFieldKey === key ? ' field-sel' : ''}`,
       draggable: true,
       onDragStart: e => { dragging.current = { key, fromCol: colName }; e.stopPropagation() },
       onDragEnd:   () => { dragging.current = null; setOverSlot(null) },
       onDragOver:  e => { e.preventDefault(); e.stopPropagation(); setOverSlot({ col: colName, key }) },
       onDragLeave: () => setOverSlot(null),
       onDrop:      e => { e.preventDefault(); e.stopPropagation(); drop(colName, key) },
+      onClick:     e => { e.stopPropagation(); onFieldSelect?.(key) },
     }
   }
 
@@ -74,7 +86,7 @@ function ColumnDrop({ columns, colKeys = ['left', 'right'], onColumnsChange, ren
 /* ── Header ── */
 const HEADER_COL_KEYS = ['left', 'center', 'right']
 
-function Header({ w, v, isSelected, onReorder }) {
+function Header({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
   const d = w.data
   const cols = d.columns || { left: ['logo'], center: [], right: ['date', 'control', 'orderNum'] }
 
@@ -91,6 +103,8 @@ function Header({ w, v, isSelected, onReorder }) {
     orderNum: () => d.showOrderNum && <span>Número de factura</span>,
   }
 
+  const renderField = makeRenderField(d, v, FIELDS)
+
   if (isSelected) {
     return (
       <ColumnDrop
@@ -98,7 +112,9 @@ function Header({ w, v, isSelected, onReorder }) {
         colKeys={HEADER_COL_KEYS}
         onColumnsChange={next => onReorder(w.id, 'columns', next)}
         wrapClass="w-header-reorder"
-        renderField={k => FIELDS[k]?.() || <span className="field-hidden">{k}</span>}
+        renderField={renderField}
+        selFieldKey={selFieldKey}
+        onFieldSelect={onFieldSelect}
       />
     )
   }
@@ -127,9 +143,11 @@ const CLIENT_FIELDS = {
   payment: (d, v) => d.showPayment && <div className="wcf"><label>Forma de pago</label><span>{v.payment}</span></div>,
 }
 
-function Client({ w, v, isSelected, onReorder }) {
+function Client({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
   const d = w.data
   const cols = d.columns || { left: ['name', 'ci', 'phone'], right: ['address', 'payment'] }
+
+  const renderField = makeRenderField(d, v, CLIENT_FIELDS)
 
   if (isSelected) {
     return (
@@ -137,7 +155,9 @@ function Client({ w, v, isSelected, onReorder }) {
         columns={cols}
         onColumnsChange={next => onReorder(w.id, 'columns', next)}
         wrapClass="w-client-reorder"
-        renderField={k => CLIENT_FIELDS[k]?.(d, v) || <span className="field-hidden">{k}</span>}
+        renderField={renderField}
+        selFieldKey={selFieldKey}
+        onFieldSelect={onFieldSelect}
       />
     )
   }
@@ -162,10 +182,12 @@ const DISPATCH_FIELDS = {
   address:  (d, v) => d.showAddress  && <div className="wdi"><label>Dirección</label><span>{v.address}</span></div>,
 }
 
-function Dispatch({ w, v, isSelected, onReorder }) {
+function Dispatch({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
   const d = w.data
   const cols = d.columns || { left: ['logistic', 'type'], right: ['date', 'address'] }
   const style = { background: d.bgColor, borderTop: `2px solid ${d.accentColor}`, borderBottom: `2px solid ${d.accentColor}` }
+
+  const renderField = makeRenderField(d, v, DISPATCH_FIELDS)
 
   if (isSelected) {
     return (
@@ -174,7 +196,9 @@ function Dispatch({ w, v, isSelected, onReorder }) {
         onColumnsChange={next => onReorder(w.id, 'columns', next)}
         wrapClass="w-dispatch-reorder"
         wrapStyle={style}
-        renderField={k => DISPATCH_FIELDS[k]?.(d, v) || <span className="field-hidden">{k}</span>}
+        renderField={renderField}
+        selFieldKey={selFieldKey}
+        onFieldSelect={onFieldSelect}
       />
     )
   }
@@ -234,11 +258,21 @@ const FOOTER_FIELDS = {
   msg:   (d, v, c) => v.msg   && <div style={{ color: c.msg,  fontSize: 9 }}>{v.msg}</div>,
 }
 
-function Footer({ w, v, isSelected, onReorder }) {
+function Footer({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
   const d = w.data
   const cols = d.columns || { left: ['name', 'phone', 'web'], right: ['msg'] }
   const bg = d.dark ? '#1a1a1a' : '#f8f8f8'
   const c  = { name: d.dark ? '#fff' : '#111', text: d.dark ? '#aaa' : '#555', msg: d.dark ? '#666' : '#aaa' }
+
+  // Footer builtin fields need c, so wrap them
+  const FOOTER_BUILTIN = {
+    name:  (d, v) => FOOTER_FIELDS.name(d, v, c),
+    phone: (d, v) => FOOTER_FIELDS.phone(d, v, c),
+    web:   (d, v) => FOOTER_FIELDS.web(d, v, c),
+    msg:   (d, v) => FOOTER_FIELDS.msg(d, v, c),
+  }
+
+  const renderField = makeRenderField(d, v, FOOTER_BUILTIN)
 
   if (isSelected) {
     return (
@@ -247,7 +281,9 @@ function Footer({ w, v, isSelected, onReorder }) {
         onColumnsChange={next => onReorder(w.id, 'columns', next)}
         wrapClass="w-footer-reorder"
         wrapStyle={{ background: bg }}
-        renderField={k => FOOTER_FIELDS[k]?.(d, v, c) || <span className="field-hidden">{k}</span>}
+        renderField={renderField}
+        selFieldKey={selFieldKey}
+        onFieldSelect={onFieldSelect}
       />
     )
   }
@@ -265,15 +301,15 @@ function Footer({ w, v, isSelected, onReorder }) {
 }
 
 /* ── Main export ── */
-export default function WidgetRenderer({ widget, sampleData, isSelected, onReorder }) {
+export default function WidgetRenderer({ widget, sampleData, isSelected, onReorder, selFieldKey, onFieldSelect }) {
   const d = widget.data
   const v = resolveWidgetData(widget, sampleData)
 
-  if (widget.type === 'header')   return <Header   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} />
-  if (widget.type === 'client')   return <Client   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} />
-  if (widget.type === 'dispatch') return <Dispatch w={widget} v={v} isSelected={isSelected} onReorder={onReorder} />
+  if (widget.type === 'header')   return <Header   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
+  if (widget.type === 'client')   return <Client   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
+  if (widget.type === 'dispatch') return <Dispatch w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
   if (widget.type === 'products') return <Products d={d} v={v} />
-  if (widget.type === 'footer')   return <Footer   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} />
+  if (widget.type === 'footer')   return <Footer   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
   if (widget.type === 'divider')  return <div className="w-divider"><hr style={{ borderTop: `1px ${d.style} ${d.color}` }} /></div>
   if (widget.type === 'text')     return <div className="w-text" style={{ fontSize: d.fontSize }}>{d.content}</div>
   return null

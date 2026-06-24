@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import WidgetList from './components/WidgetList'
 import Canvas from './components/Canvas'
 import RightPanel from './components/RightPanel'
@@ -10,9 +10,12 @@ import './App.css'
 export default function App() {
   const [widgets, setWidgets] = useState([])
   const [selId, setSelId] = useState(null)
+  const [selFieldKey, setSelFieldKey] = useState(null)
   const [activeTab, setActiveTab] = useState('props')
   const [sampleData, setSampleData] = useState(() => JSON.parse(JSON.stringify(SAMPLE_DATA)))
   const dragTypeRef = useRef(null)
+
+  useEffect(() => { setSelFieldKey(null) }, [selId])
 
   function addWidget(type) {
     const w = { id: uid(), type, data: JSON.parse(JSON.stringify(WDEF[type])) }
@@ -52,6 +55,35 @@ export default function App() {
     setSelId(null)
   }
 
+  function updateFieldStyle(widgetId, fieldKey, styleKey, val) {
+    setWidgets(prev => prev.map(w => {
+      if (w.id !== widgetId) return w
+      const existing = w.data.fieldStyles?.[fieldKey] || {}
+      const fieldStyles = { ...(w.data.fieldStyles || {}), [fieldKey]: { ...existing, [styleKey]: val } }
+      return { ...w, data: { ...w.data, fieldStyles } }
+    }))
+  }
+
+  function updateCustomField(widgetId, fieldKey, content) {
+    setWidgets(prev => prev.map(w => {
+      if (w.id !== widgetId) return w
+      const customFields = { ...(w.data.customFields || {}), [fieldKey]: { content } }
+      return { ...w, data: { ...w.data, customFields } }
+    }))
+  }
+
+  function addCustomField(widgetId) {
+    const key = 'custom_' + uid()
+    setWidgets(prev => prev.map(w => {
+      if (w.id !== widgetId) return w
+      const customFields = { ...(w.data.customFields || {}), [key]: { content: 'Texto nuevo' } }
+      const cols = w.data.columns || {}
+      const columns = { ...cols, left: [...(cols.left || []), key] }
+      return { ...w, data: { ...w.data, customFields, columns } }
+    }))
+    setSelFieldKey(key)
+  }
+
   const selWidget = widgets.find(w => w.id === selId) ?? null
 
   return (
@@ -68,6 +100,8 @@ export default function App() {
         onSelect={setSelId}
         onClear={clearCanvas}
         onReorder={reorderField}
+        selFieldKey={selFieldKey}
+        onFieldSelect={setSelFieldKey}
       />
       <RightPanel
         activeTab={activeTab}
@@ -76,6 +110,10 @@ export default function App() {
         sampleData={sampleData}
         setSampleData={setSampleData}
         onUpdateProp={updateProp}
+        selFieldKey={selFieldKey}
+        onUpdateFieldStyle={updateFieldStyle}
+        onUpdateCustomField={updateCustomField}
+        onAddCustomField={addCustomField}
       />
     </div>
   )

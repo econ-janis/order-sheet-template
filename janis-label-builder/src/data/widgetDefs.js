@@ -51,13 +51,13 @@ export const WIDGET_TYPES = [
 ]
 
 export const WDEF = {
-  header:   { logoUrl: '', showOrderNum: true, showDate: true, showControl: true, columns: { left: ['logo'], center: [], right: ['date', 'control', 'orderNum'] } },
-  client:   { showName: true, showCI: true, showPhone: true, showAddress: true, showPayment: true, columns: { left: ['name', 'ci', 'phone'], right: ['address', 'payment'] } },
-  dispatch: { showLogistic: true, showType: true, showDate: true, showAddress: true, bgColor: '#f0f4ff', accentColor: '#4a6cf7', columns: { left: ['logistic', 'type'], right: ['date', 'address'] } },
-  products: { showSubst: true, showPrice: true, showOrigQty: true, showFinalQty: true, locale: 'es-AR', currency: 'ARS' },
-  footer:   { storeName: '', phone: '', website: '', message: 'Gracias por tu compra', dark: true, columns: { left: ['name', 'phone', 'web'], right: ['msg'] } },
-  divider:  { style: 'solid', color: '#e8e8e8' },
-  text:     { content: 'Información importante del pedido', fontSize: 10 },
+  header:   { logoUrl: '', showOrderNum: true, showDate: true, showControl: true, columns: { left: ['logo'], center: [], right: ['date', 'control', 'orderNum'] }, height: null, fieldStyles: {}, customFields: {} },
+  client:   { showName: true, showCI: true, showPhone: true, showAddress: true, showPayment: true, columns: { left: ['name', 'ci', 'phone'], right: ['address', 'payment'] }, height: null, fieldStyles: {}, customFields: {} },
+  dispatch: { showLogistic: true, showType: true, showDate: true, showAddress: true, bgColor: '#f0f4ff', accentColor: '#4a6cf7', columns: { left: ['logistic', 'type'], right: ['date', 'address'] }, height: null, fieldStyles: {}, customFields: {} },
+  products: { showSubst: true, showPrice: true, showOrigQty: true, showFinalQty: true, locale: 'es-AR', currency: 'ARS', height: null },
+  footer:   { storeName: '', phone: '', website: '', message: 'Gracias por tu compra', dark: true, columns: { left: ['name', 'phone', 'web'], right: ['msg'] }, height: null, fieldStyles: {}, customFields: {} },
+  divider:  { style: 'solid', color: '#e8e8e8', height: null },
+  text:     { content: 'Información importante del pedido', fontSize: 10, height: null },
 }
 
 export const PLABELS = {
