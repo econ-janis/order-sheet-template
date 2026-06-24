@@ -13,13 +13,12 @@ function DropZone({ dragTypeRef, dragWidgetRef, onAdd, onMoveTo, afterIndex = -1
   const [over, setOver] = useState(false)
 
   function handleDragOver(e) {
-    e.preventDefault()   // always allow drop
+    e.preventDefault()
     e.stopPropagation()
     setOver(true)
   }
 
   function handleDragLeave(e) {
-    // only clear 'over' when cursor truly leaves the zone (not entering a child)
     if (!ref.current?.contains(e.relatedTarget)) setOver(false)
   }
 
@@ -27,7 +26,7 @@ function DropZone({ dragTypeRef, dragWidgetRef, onAdd, onMoveTo, afterIndex = -1
     e.preventDefault()
     e.stopPropagation()
     setOver(false)
-    if (dragWidgetRef.current !== null) {
+    if (dragWidgetRef.current) {
       onMoveTo(dragWidgetRef.current, afterIndex)
       dragWidgetRef.current = null
     } else if (dragTypeRef.current) {
@@ -178,23 +177,31 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
               : (
                 <>
                   {widgets.map((w, i) => (
-                    // Fragment with key avoids wrapper div breaking the CSS grid
                     <Fragment key={w.id}>
                       <div
                         className={`cwrap${selId === w.id ? ' sel-ring' : ''}`}
-                        draggable
                         style={{
                           gridColumn: `span ${w.data.colSpan ?? 4}`,
                           minHeight: w.data.height ? w.data.height + 'px' : undefined,
                         }}
-                        onDragStart={e => {
-                          dragWidgetRef.current = w.id
-                          dragTypeRef.current = null
-                          e.stopPropagation()
-                        }}
-                        onDragEnd={() => { dragWidgetRef.current = null }}
                         onClick={e => { e.stopPropagation(); onSelect(w.id) }}
                       >
+                        {/* Dedicated move handle – only this element initiates canvas-to-canvas drag */}
+                        <div
+                          className="cwrap-move-handle"
+                          draggable
+                          title="Mover widget"
+                          onDragStart={e => {
+                            dragWidgetRef.current = w.id
+                            dragTypeRef.current = null
+                            e.stopPropagation()
+                          }}
+                          onDragEnd={() => { dragWidgetRef.current = null }}
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <i className="ti ti-grip-horizontal" style={{ fontSize: 10, pointerEvents: 'none' }} />
+                        </div>
+
                         <WidgetRenderer widget={w} sampleData={sampleData} isSelected={selId === w.id} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
                         <div className="wov">
                           {i > 0 && (

@@ -104,6 +104,15 @@
   color: #fff; opacity: 0; transition: opacity .12s; z-index: 12;
 }
 .sel-ring .resize-handle { opacity: 1; }
+/* Move handle – always visible at top of widget, used for canvas-to-canvas drag */
+.cwrap-move-handle {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  z-index: 11; cursor: grab; background: rgba(74,108,247,.85);
+  color: #fff; border-radius: 0 0 4px 4px; padding: 1px 8px;
+  opacity: 0; transition: opacity .12s;
+}
+.cwrap:hover .cwrap-move-handle { opacity: 1; }
+.cwrap-move-handle:active { cursor: grabbing; }
 .wov {
   position: absolute; top: 3px; right: 3px;
   display: flex; gap: 3px; opacity: 0; transition: opacity .12s; z-index: 10;
