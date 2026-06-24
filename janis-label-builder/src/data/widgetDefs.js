@@ -51,7 +51,7 @@ export const WIDGET_TYPES = [
 ]
 
 export const WDEF = {
-  header:   { logoUrl: '', showOrderNum: true, showDate: true, showControl: true, columns: { left: ['logo'], right: ['date', 'control', 'orderNum'] } },
+  header:   { logoUrl: '', showOrderNum: true, showDate: true, showControl: true, columns: { left: ['logo'], center: [], right: ['date', 'control', 'orderNum'] } },
   client:   { showName: true, showCI: true, showPhone: true, showAddress: true, showPayment: true, columns: { left: ['name', 'ci', 'phone'], right: ['address', 'payment'] } },
   dispatch: { showLogistic: true, showType: true, showDate: true, showAddress: true, bgColor: '#f0f4ff', accentColor: '#4a6cf7', columns: { left: ['logistic', 'type'], right: ['date', 'address'] } },
   products: { showSubst: true, showPrice: true, showOrigQty: true, showFinalQty: true, locale: 'es-AR', currency: 'ARS' },

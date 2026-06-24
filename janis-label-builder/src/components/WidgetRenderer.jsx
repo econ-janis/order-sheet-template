@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react'
 import { resolveWidgetData, fmtCurrency } from '../utils/helpers'
 
-/* ── Two-column drag & drop layout ── */
-function TwoColumnDrop({ columns, onColumnsChange, renderField, wrapClass, wrapStyle }) {
+const COL_LABELS = { left: 'Izquierda', center: 'Centro', right: 'Derecha' }
+
+/* ── N-column drag & drop layout ── */
+function ColumnDrop({ columns, colKeys = ['left', 'right'], onColumnsChange, renderField, wrapClass, wrapStyle }) {
   const dragging = useRef(null)
   const [overSlot, setOverSlot] = useState(null)
 
@@ -15,7 +17,8 @@ function TwoColumnDrop({ columns, onColumnsChange, renderField, wrapClass, wrapS
     const { key, fromCol } = dragging.current
     if (key === targetKey) { dragging.current = null; setOverSlot(null); return }
 
-    const next = { left: [...(columns.left || [])], right: [...(columns.right || [])] }
+    const next = {}
+    colKeys.forEach(c => { next[c] = [...(columns[c] || [])] })
     next[fromCol] = next[fromCol].filter(k => k !== key)
 
     if (targetKey) {
@@ -52,10 +55,10 @@ function TwoColumnDrop({ columns, onColumnsChange, renderField, wrapClass, wrapS
   }
 
   return (
-    <div className={`two-col-drop ${wrapClass || ''}`} style={wrapStyle}>
-      {['left', 'right'].map(col => (
+    <div className={`col-drop col-drop-${colKeys.length} ${wrapClass || ''}`} style={wrapStyle}>
+      {colKeys.map(col => (
         <div key={col} {...colZone(col)}>
-          <div className="col-label">{col === 'left' ? 'Columna izq.' : 'Columna der.'}</div>
+          <div className="col-label">{COL_LABELS[col] || col}</div>
           {(columns[col] || []).map(k => (
             <div key={k} {...itemDrag(col, k)}>
               <span className="drag-handle"><i className="ti ti-grip-vertical" /></span>
@@ -69,9 +72,11 @@ function TwoColumnDrop({ columns, onColumnsChange, renderField, wrapClass, wrapS
 }
 
 /* ── Header ── */
+const HEADER_COL_KEYS = ['left', 'center', 'right']
+
 function Header({ w, v, isSelected, onReorder }) {
   const d = w.data
-  const cols = d.columns || { left: ['logo'], right: ['date', 'control', 'orderNum'] }
+  const cols = d.columns || { left: ['logo'], center: [], right: ['date', 'control', 'orderNum'] }
 
   const FIELDS = {
     logo:     () => (
@@ -88,8 +93,9 @@ function Header({ w, v, isSelected, onReorder }) {
 
   if (isSelected) {
     return (
-      <TwoColumnDrop
+      <ColumnDrop
         columns={cols}
+        colKeys={HEADER_COL_KEYS}
         onColumnsChange={next => onReorder(w.id, 'columns', next)}
         wrapClass="w-header-reorder"
         renderField={k => FIELDS[k]?.() || <span className="field-hidden">{k}</span>}
@@ -97,13 +103,17 @@ function Header({ w, v, isSelected, onReorder }) {
     )
   }
 
-  const leftItems  = (cols.left  || []).map(k => FIELDS[k]?.()).filter(Boolean)
-  const rightItems = (cols.right || []).map(k => FIELDS[k]?.()).filter(Boolean)
-
   return (
     <div className="w-header">
-      <div className="w-header-col">{leftItems}</div>
-      <div className="w-header-col w-header-col-right">{rightItems}</div>
+      {HEADER_COL_KEYS.map(col => {
+        const items = (cols[col] || []).map(k => FIELDS[k]?.()).filter(Boolean)
+        if (!items.length) return null
+        return (
+          <div key={col} className={`w-header-col${col === 'right' ? ' w-header-col-right' : ''}`}>
+            {items}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -123,7 +133,7 @@ function Client({ w, v, isSelected, onReorder }) {
 
   if (isSelected) {
     return (
-      <TwoColumnDrop
+      <ColumnDrop
         columns={cols}
         onColumnsChange={next => onReorder(w.id, 'columns', next)}
         wrapClass="w-client-reorder"
@@ -159,7 +169,7 @@ function Dispatch({ w, v, isSelected, onReorder }) {
 
   if (isSelected) {
     return (
-      <TwoColumnDrop
+      <ColumnDrop
         columns={cols}
         onColumnsChange={next => onReorder(w.id, 'columns', next)}
         wrapClass="w-dispatch-reorder"
@@ -232,7 +242,7 @@ function Footer({ w, v, isSelected, onReorder }) {
 
   if (isSelected) {
     return (
-      <TwoColumnDrop
+      <ColumnDrop
         columns={cols}
         onColumnsChange={next => onReorder(w.id, 'columns', next)}
         wrapClass="w-footer-reorder"
