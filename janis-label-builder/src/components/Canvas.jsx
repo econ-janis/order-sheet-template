@@ -107,12 +107,13 @@ function buildRowSlots(widgets) {
   return result
 }
 
-export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onDelete, onMove, onMoveTo, onSelect, onClear, onReorder, onResize, selFieldKey, onFieldSelect }) {
+export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onDelete, onMove, onMoveTo, onSplit, onSelect, onClear, onReorder, onResize, selFieldKey, onFieldSelect }) {
   const sizeRef = useRef(null)
   const canvasRef = useRef(null)
   const [dragId, setDragId] = useState(null)
   const [ghost, setGhost] = useState(null)        // {x, y, label}
   const [hotKey, setHotKey] = useState(null)       // which drop zone is highlighted
+  const [splitKey, setSplitKey] = useState(null)  // which widget's split zone is hot
   const dragStateRef = useRef(null)
 
   function onSizeChange(e) {
@@ -135,6 +136,16 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
     function onMove(ev) {
       setGhost({ x: ev.clientX, y: ev.clientY, label })
       const el = document.elementFromPoint(ev.clientX, ev.clientY)
+      const splitZoneId = el?.getAttribute('data-split-zone') || el?.closest('[data-split-zone]')?.getAttribute('data-split-zone')
+      if (splitZoneId && splitZoneId !== id) {
+        setSplitKey(splitZoneId)
+        dragStateRef.current.splitTarget = splitZoneId
+        dragStateRef.current.afterIndex = null
+        setHotKey(null)
+        return
+      }
+      setSplitKey(null)
+      dragStateRef.current.splitTarget = null
       const zone = el?.closest('.dropzone')
       if (zone) {
         setHotKey(zone.getAttribute('data-zone-key'))
@@ -149,10 +160,11 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
       document.removeEventListener('mouseup', onUp)
       document.body.style.userSelect = ''
       document.body.style.cursor = ''
-      const { id, afterIndex } = dragStateRef.current || {}
-      if (afterIndex !== null && afterIndex !== undefined) onMoveTo(id, afterIndex)
+      const { id, afterIndex, splitTarget } = dragStateRef.current || {}
+      if (splitTarget) onSplit(splitTarget, id)
+      else if (afterIndex !== null && afterIndex !== undefined) onMoveTo(id, afterIndex)
       dragStateRef.current = null
-      setDragId(null); setGhost(null); setHotKey(null)
+      setDragId(null); setGhost(null); setHotKey(null); setSplitKey(null)
     }
     document.addEventListener('mousemove', onMove)
     document.addEventListener('mouseup', onUp)
@@ -214,6 +226,12 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                         </div>
 
                         <WidgetRenderer widget={w} sampleData={sampleData} isSelected={selId === w.id} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
+                        {dragActive && dragId !== w.id && (
+                          <div
+                            className={`split-zone${splitKey === w.id ? ' sz-hot' : ''}`}
+                            data-split-zone={w.id}
+                          />
+                        )}
                         <div className="wov">
                           {i > 0 && (
                             <button className="wob wob-mv" title="Subir" onClick={e => { e.stopPropagation(); onMove(w.id, -1) }}>

@@ -73,6 +73,20 @@ export default function App() {
     )
   }
 
+  function splitWidgets(targetId, draggedId) {
+    setWidgets(prev => {
+      const arr = [...prev]
+      const fromIdx = arr.findIndex(w => w.id === draggedId)
+      const toIdx = arr.findIndex(w => w.id === targetId)
+      if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return arr
+      const [dragged] = arr.splice(fromIdx, 1)
+      const newToIdx = arr.findIndex(w => w.id === targetId)
+      arr[newToIdx] = { ...arr[newToIdx], data: { ...arr[newToIdx].data, colSpan: 2 } }
+      arr.splice(newToIdx + 1, 0, { ...dragged, data: { ...dragged.data, colSpan: 2 } })
+      return arr
+    })
+  }
+
   function clearCanvas() {
     setWidgets([])
     setSelId(null)
@@ -125,6 +139,7 @@ export default function App() {
         onReorder={reorderField}
         onResize={resizeWidget}
         onMoveTo={moveWidgetTo}
+        onSplit={splitWidgets}
         selFieldKey={selFieldKey}
         onFieldSelect={setSelFieldKey}
       />
