@@ -43,6 +43,18 @@ export default function App() {
     })
   }
 
+  function moveWidgetTo(id, afterIndex) {
+    setWidgets(prev => {
+      const arr = [...prev]
+      const fromIdx = arr.findIndex(w => w.id === id)
+      if (fromIdx === -1 || fromIdx === afterIndex) return arr
+      const [widget] = arr.splice(fromIdx, 1)
+      const insertAt = afterIndex > fromIdx ? afterIndex : afterIndex + 1
+      arr.splice(insertAt, 0, widget)
+      return arr
+    })
+  }
+
   function updateProp(id, key, val) {
     setWidgets(prev =>
       prev.map(w => w.id === id ? { ...w, data: { ...w.data, [key]: val } } : w)
@@ -112,6 +124,7 @@ export default function App() {
         onClear={clearCanvas}
         onReorder={reorderField}
         onResize={resizeWidget}
+        onMoveTo={moveWidgetTo}
         selFieldKey={selFieldKey}
         onFieldSelect={setSelFieldKey}
       />

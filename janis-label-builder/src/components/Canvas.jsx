@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import WidgetRenderer from './WidgetRenderer'
 import { genHbs, esc } from '../utils/helpers'
 
@@ -8,26 +8,51 @@ const SIZE_MAP = {
   label: { minHeight: '260px', maxWidth: '300px' },
 }
 
-function DropZone({ dragTypeRef, onAdd, colSpan = 4, compact }) {
+/* Shared drag state: either a new-type drag or an existing-widget drag */
+function useSharedDrop(dragTypeRef, dragWidgetRef, onAdd, onMoveTo, afterIndex) {
   const ref = useRef(null)
+  const [over, setOver] = useState(false)
+
+  function handleDragOver(e) {
+    if (!dragTypeRef.current && !dragWidgetRef.current) return
+    e.preventDefault()
+    e.stopPropagation()
+    setOver(true)
+  }
+
+  function handleDragLeave() { setOver(false) }
+
+  function handleDrop(e) {
+    e.preventDefault()
+    e.stopPropagation()
+    setOver(false)
+    if (dragWidgetRef.current !== null) {
+      onMoveTo(dragWidgetRef.current, afterIndex)
+      dragWidgetRef.current = null
+    } else if (dragTypeRef.current) {
+      onAdd(dragTypeRef.current, afterIndex)
+      dragTypeRef.current = null
+    }
+  }
+
+  return { ref, over, handleDragOver, handleDragLeave, handleDrop }
+}
+
+function DropZone({ dragTypeRef, dragWidgetRef, onAdd, onMoveTo, afterIndex = -1, colSpan = 4, compact }) {
+  const { ref, over, handleDragOver, handleDragLeave, handleDrop } =
+    useSharedDrop(dragTypeRef, dragWidgetRef, onAdd, onMoveTo, afterIndex)
+
   return (
     <div
       ref={ref}
-      className="dropzone"
+      className={`dropzone${over ? ' over' : ''}`}
       style={{ gridColumn: `span ${colSpan}`, ...(compact ? { minHeight: 32, margin: 4 } : {}) }}
-      onDragOver={e => { e.preventDefault(); ref.current.classList.add('over') }}
-      onDragLeave={() => ref.current.classList.remove('over')}
-      onDrop={e => {
-        e.preventDefault()
-        ref.current.classList.remove('over')
-        if (dragTypeRef.current) {
-          onAdd(dragTypeRef.current)
-          dragTypeRef.current = null
-        }
-      }}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       {compact
-        ? <span style={{ fontSize: 10, color: '#ccc' }}>+ soltar aquí</span>
+        ? <span style={{ fontSize: 10, color: over ? '#4a6cf7' : '#ccc' }}>+ soltar aquí</span>
         : (
           <div className="empty-c">
             <i className="ti ti-drag-drop" aria-hidden="true" />
@@ -99,10 +124,8 @@ function exportHbs(widgets) {
   )
 }
 
-/* compute remaining columns after each widget so we know where inline drop zones go */
+/* compute remaining columns after each widget */
 function buildRowSlots(widgets) {
-  // returns array of same length as widgets: remaining cols in that row after placing the widget
-  // 0 means row is full (no inline drop zone needed)
   const result = []
   let col = 0
   for (const w of widgets) {
@@ -119,9 +142,10 @@ function buildRowSlots(widgets) {
   return result
 }
 
-export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onDelete, onMove, onSelect, onClear, onReorder, onResize, selFieldKey, onFieldSelect }) {
+export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onDelete, onMove, onMoveTo, onSelect, onClear, onReorder, onResize, selFieldKey, onFieldSelect }) {
   const sizeRef = useRef(null)
   const canvasRef = useRef(null)
+  const dragWidgetRef = useRef(null)
 
   function onSizeChange(e) {
     const s = SIZE_MAP[e.target.value] || SIZE_MAP.a4
@@ -157,17 +181,24 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
         <div className="lcanvas" ref={sizeRef}>
           <div className="lcgrid" ref={canvasRef} onClick={() => onSelect(null)}>
             {widgets.length === 0
-              ? <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} colSpan={4} />
+              ? <DropZone dragTypeRef={dragTypeRef} dragWidgetRef={dragWidgetRef} onAdd={onAdd} onMoveTo={onMoveTo} afterIndex={-1} colSpan={4} />
               : (
                 <>
                   {widgets.map((w, i) => (
                     <div key={w.id} style={{ display: 'contents' }}>
                       <div
                         className={`cwrap${selId === w.id ? ' sel-ring' : ''}`}
+                        draggable
                         style={{
                           gridColumn: `span ${w.data.colSpan ?? 4}`,
                           minHeight: w.data.height ? w.data.height + 'px' : undefined,
                         }}
+                        onDragStart={e => {
+                          dragWidgetRef.current = w.id
+                          dragTypeRef.current = null
+                          e.stopPropagation()
+                        }}
+                        onDragEnd={() => { dragWidgetRef.current = null }}
                         onClick={e => { e.stopPropagation(); onSelect(w.id) }}
                       >
                         <WidgetRenderer widget={w} sampleData={sampleData} isSelected={selId === w.id} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
@@ -195,7 +226,10 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                         <DropZone
                           key={`dz-${w.id}`}
                           dragTypeRef={dragTypeRef}
-                          onAdd={type => onAdd(type, i)}
+                          dragWidgetRef={dragWidgetRef}
+                          onAdd={onAdd}
+                          onMoveTo={onMoveTo}
+                          afterIndex={i}
                           colSpan={rowSlots[i]}
                           compact
                         />
@@ -203,7 +237,15 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                     </div>
                   ))}
                   {rowSlots[widgets.length - 1] === 0 && (
-                    <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} colSpan={4} compact />
+                    <DropZone
+                      dragTypeRef={dragTypeRef}
+                      dragWidgetRef={dragWidgetRef}
+                      onAdd={onAdd}
+                      onMoveTo={onMoveTo}
+                      afterIndex={widgets.length - 1}
+                      colSpan={4}
+                      compact
+                    />
                   )}
                 </>
               )}
