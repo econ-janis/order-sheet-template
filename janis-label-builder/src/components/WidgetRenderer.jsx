@@ -5,7 +5,7 @@ function Header({ d, v }) {
     <div className="w-header">
       <div className="w-logo-box">
         {v.logoUrl
-          ? <img src={v.logoUrl} style={{ maxWidth: 66, maxHeight: 22, objectFit: 'contain' }} alt="Logo" />
+          ? <img src={v.logoUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="Logo" />
           : v.storeName || 'Logo'}
       </div>
       <div className="w-header-meta">
