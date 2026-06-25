@@ -207,9 +207,13 @@ const EXPORT_CSS = `
 
 function exportHbs(widgets) {
   if (!widgets.length) { alert('Agregá al menos un widget.'); return }
-  const body = widgets.map(w => '  ' + genHbs(w).replace(/\n/g, '\n  ')).join('\n\n')
+  const body = widgets.map(w => {
+    const span = w.data.colSpan ?? 4
+    const inner = '  ' + genHbs(w).replace(/\n/g, '\n    ')
+    return `  <div style="grid-column:span ${span}">\n    ${inner}\n  </div>`
+  }).join('\n\n')
   const hbsContent =
-    `{{#if order}}\n<div class="label-container lcgrid" id="pedido-{{order.commerceSequentialId}}">\n\n` +
+    `{{#if order}}\n<div class="label-container" id="pedido-{{order.commerceSequentialId}}" style="display:grid;grid-template-columns:repeat(4,1fr);align-items:start">\n\n` +
     body + `\n\n</div>\n{{/if}}`
   const full = `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<style>\n${EXPORT_CSS}\n</style>\n</head>\n<body>\n${hbsContent}\n</body>\n</html>`
   const win = window.open('', '_blank', 'width=800,height=600')
