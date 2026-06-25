@@ -307,7 +307,7 @@ function Products({ d, v }) {
               {d.showSubst && <td>{it.isSubstituted ? 'Sí' : '-'}</td>}
               {d.showPrice && <td>{fmtCurrency(it.purchasedPrice, v.loc, v.cur)}</td>}
               {d.showOrigQty && <td>{it.purchasedQuantity ?? ''}</td>}
-              {d.showFinalQty && <td>{it.quantity ?? ''}</td>}
+              {d.showFinalQty && <td>{it.pickingResult?.[0]?.totalQuantity ?? it.quantity ?? ''}</td>}
             </tr>
           ))}
           <tr className="tot">

@@ -118,14 +118,18 @@ function getPath(path, data) {
 
 function resolveExpr(expr, data) {
   const parts = expr.trim().split(/\s+/)
-  if (parts.length === 1) return getPath(parts[0], data)
+  const firstItem = (data?.order?.items || [])[0] || {}
+  function resolvePath(p) {
+    const v = getPath(p, data)
+    return v !== undefined ? v : getPath(p, firstItem)
+  }
+  if (parts.length === 1) return resolvePath(parts[0])
   const [name, arg] = parts
-  if (name === 'formatDate') return fmtDate(getPath(arg, data))
-  if (name === 'currency') return fmtCurrency(Number(getPath(arg, data)), 'es-AR', 'ARS')
-  if (name === 'uppercase') return String(getPath(arg, data) ?? '').toUpperCase()
+  if (name === 'formatDate') return fmtDate(resolvePath(arg))
+  if (name === 'currency') return fmtCurrency(Number(resolvePath(arg)), 'es-UY', 'UYU')
+  if (name === 'uppercase') return String(resolvePath(arg) ?? '').toUpperCase()
   if (name === 'count' || name === 'sumArray') { const v = getPath(arg, data); return Array.isArray(v) ? v.length : v }
-  // unknown helper: best-effort resolve of its first path argument
-  return getPath(arg, data)
+  return resolvePath(arg)
 }
 
 export function resolveTemplate(str, sampleData) {
@@ -220,8 +224,8 @@ export function genHbs(w) {
     (d.showSubst ? '      <td>{{#if isSubstituted}}Sí{{else}}-{{/if}}</td>\n' : '') +
     (d.showPrice ? `      <td>{{currency purchasedPrice locale="${d.locale}" currencyCode="${d.currency}"}}</td>\n` : '') +
     (d.showOrigQty ? '      <td>{{purchasedQuantity}}</td>\n' : '') +
-    (d.showFinalQty ? '      <td>{{quantity}}</td>\n' : '') +
-    `    </tr>\n  {{/each}}\n    <tr class="total">\n      <td>Total enviados</td>\n      <td>{{sumArray order.items "quantity"}}</td>\n    </tr>\n  </tbody>\n</table>`
+    (d.showFinalQty ? '      <td>{{pickingResult.[0].totalQuantity}}</td>\n' : '') +
+    `    </tr>\n  {{/each}}\n    <tr class="total">\n      <td>Total enviados</td>\n      <td>{{sumArray order.items "purchasedQuantity"}}</td>\n    </tr>\n  </tbody>\n</table>`
   )
 
   if (w.type === 'footer') {

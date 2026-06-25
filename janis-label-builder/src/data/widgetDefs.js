@@ -149,10 +149,12 @@ export const HBS_BY_TYPE = {
   ],
   products: [
     '{{#each order.items}}',
-    '{{currency purchasedPrice locale="es-AR" currencyCode="ARS"}}',
-    '{{sumArray order.items "quantity"}}',
-    '{{multiply purchasedQuantity sellingUnitMultiplier}}',
     '{{this.name}}',
+    '{{purchasedQuantity}}',
+    '{{pickingResult.[0].totalQuantity}}',
+    '{{currency purchasedPrice locale="es-UY" currencyCode="UYU"}}',
+    '{{sumArray order.items "purchasedQuantity"}}',
+    '{{multiply purchasedQuantity sellingUnitMultiplier}}',
   ],
   footer: [
     '{{root.store.name}}',
