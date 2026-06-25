@@ -435,3 +435,53 @@
   }
   @page { size: auto; margin: 12mm; }
 }
+
+/* ── Template picker modal ── */
+.tpl-modal {
+  background: #f8f9fb; border-radius: 12px; overflow: hidden;
+  width: 100%; max-width: 900px; max-height: 90vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 16px 56px rgba(0,0,0,.38);
+}
+.tpl-scroll { overflow-y: auto; padding: 20px; }
+.tpl-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+}
+@media (max-width: 700px) { .tpl-grid { grid-template-columns: 1fr 1fr; } }
+
+.tpl-card {
+  background: #fff; border-radius: 10px; overflow: hidden;
+  border: 2px solid #e8eaf0; cursor: pointer;
+  display: flex; flex-direction: column;
+  transition: border-color .15s, box-shadow .15s, transform .12s;
+}
+.tpl-card:hover {
+  border-color: #4a6cf7;
+  box-shadow: 0 4px 20px rgba(74,108,247,.18);
+  transform: translateY(-2px);
+}
+.tpl-tag {
+  display: inline-block; margin: 10px 10px 0;
+  background: #eef2ff; color: #4a6cf7;
+  font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 20px; width: fit-content;
+}
+.tpl-preview-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 3px; padding: 10px; margin: 6px 10px;
+  background: #f3f4f8; border-radius: 6px;
+}
+.tpl-preview-block {
+  border-radius: 3px; padding: 5px 4px;
+  font-size: 7px; font-weight: 700; text-align: center;
+  min-height: 22px; display: flex; align-items: center; justify-content: center;
+}
+.tpb-divider { min-height: 6px !important; padding: 0 !important; opacity: .6; }
+.tpl-footer { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.tpl-name { font-size: 13px; font-weight: 700; color: #1a1d2e; }
+.tpl-desc { font-size: 10px; color: #6b7280; line-height: 1.45; flex: 1; }
+.tpl-btn { margin-top: 8px; width: 100%; justify-content: center; font-size: 11px; }
+
+/* Plantillas button accent */
+.tpl-trigger { color: #4a6cf7 !important; border-color: #c7d2fe !important; }
+.tpl-trigger:hover { background: #eef2ff !important; }

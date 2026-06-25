@@ -108,7 +108,7 @@ function buildRowSlots(widgets) {
   return result
 }
 
-export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onAddBeside, onDelete, onMove, onMoveTo, onSplit, onSelect, onClear, onReorder, onResize, selFieldKey, onFieldSelect }) {
+export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onAddBeside, onDelete, onMove, onMoveTo, onSplit, onSelect, onClear, onTemplate, onReorder, onResize, selFieldKey, onFieldSelect }) {
   const sizeRef = useRef(null)
   const canvasRef = useRef(null)
   const [dragId, setDragId] = useState(null)
@@ -195,6 +195,9 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
           </select>
         </div>
         <div style={{ display: 'flex', gap: 5 }}>
+          <button className="tbtn tpl-trigger" onClick={onTemplate}>
+            <i className="ti ti-layout-grid" style={{ fontSize: 12 }} aria-hidden="true" /> Plantillas
+          </button>
           <button className="tbtn" onClick={onClear}>
             <i className="ti ti-trash" style={{ fontSize: 12 }} aria-hidden="true" /> Limpiar
           </button>

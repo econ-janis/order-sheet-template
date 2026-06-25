@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import WidgetList from './components/WidgetList'
 import Canvas from './components/Canvas'
 import RightPanel from './components/RightPanel'
+import TemplateModal from './components/TemplateModal'
 import { WDEF } from './data/widgetDefs'
 import { SAMPLE_DATA } from './data/sampleData'
 import { uid } from './utils/helpers'
@@ -13,6 +14,7 @@ export default function App() {
   const [selFieldKey, setSelFieldKey] = useState(null)
   const [activeTab, setActiveTab] = useState('props')
   const [sampleData, setSampleData] = useState(() => JSON.parse(JSON.stringify(SAMPLE_DATA)))
+  const [showTemplateModal, setShowTemplateModal] = useState(widgets.length === 0)
   const dragTypeRef = useRef(null)
 
   useEffect(() => { setSelFieldKey(null) }, [selId])
@@ -101,9 +103,17 @@ export default function App() {
     setSelId(w.id)
   }
 
+  function loadTemplate(tpl) {
+    const ws = tpl.widgets.map(w => ({ id: uid(), type: w.type, data: JSON.parse(JSON.stringify(w.data)) }))
+    setWidgets(ws)
+    setSelId(null)
+    setShowTemplateModal(false)
+  }
+
   function clearCanvas() {
     setWidgets([])
     setSelId(null)
+    setShowTemplateModal(true)
   }
 
   function updateFieldStyle(widgetId, fieldKey, styleKey, val) {
@@ -139,6 +149,7 @@ export default function App() {
 
   return (
     <div className="builder" id="builder">
+      {showTemplateModal && <TemplateModal onSelect={loadTemplate} onClose={() => setShowTemplateModal(false)} />}
       <WidgetList dragTypeRef={dragTypeRef} />
       <Canvas
         widgets={widgets}
@@ -155,6 +166,7 @@ export default function App() {
         onMoveTo={moveWidgetTo}
         onSplit={splitWidgets}
         onAddBeside={addBeside}
+        onTemplate={() => setShowTemplateModal(true)}
         selFieldKey={selFieldKey}
         onFieldSelect={setSelFieldKey}
       />
