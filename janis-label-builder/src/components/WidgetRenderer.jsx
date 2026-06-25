@@ -427,7 +427,7 @@ function Logo({ d }) {
   return (
     <div className="w-logo-widget" style={{ height: d.height ? d.height + 'px' : '80px' }}>
       {d.imageUrl
-        ? <img src={d.imageUrl} alt="Logo" draggable={false} style={{ width: '100%', height: '100%', objectFit: d.objectFit || 'contain', display: 'block', pointerEvents: 'none' }} />
+        ? <img src={d.imageUrl} alt="Logo" draggable={false} style={{ width: '100%', height: '100%', objectFit: d.objectFit || 'contain', display: 'block', pointerEvents: 'none', filter: d.bw ? 'grayscale(1)' : undefined }} />
         : <div className="w-logo-placeholder"><i className="ti ti-photo" /><span>URL de imagen en Propiedades</span></div>}
     </div>
   )
