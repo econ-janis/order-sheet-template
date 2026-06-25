@@ -58,12 +58,12 @@ export const WIDGET_TYPES = [
 ]
 
 export const WDEF = {
-  header:   { showOrderNum: true, showDate: true, showControl: true, columns: { left: [], center: [], right: ['date', 'control', 'orderNum'] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },
+  header:   { showOrderNum: true, showDate: true, showControl: true, colCount: 3, columns: { c0: [], c1: [], c2: ['date', 'control', 'orderNum'] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },
   logo:     { imageUrl: '', objectFit: 'contain', height: 80, colSpan: 4 },
-  client:   { showName: true, showCI: true, showPhone: true, showAddress: true, showPayment: true, columns: { left: ['name', 'ci', 'phone'], right: ['address', 'payment'] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },
-  dispatch: { showLogistic: true, showType: true, showDate: true, showAddress: true, bgColor: '#f0f4ff', accentColor: '#4a6cf7', columns: { left: ['logistic', 'type'], right: ['date', 'address'] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },
+  client:   { showName: true, showCI: true, showPhone: true, showAddress: true, showPayment: true, colCount: 3, columns: { c0: ['name', 'ci', 'phone'], c1: ['address', 'payment'], c2: [] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },
+  dispatch: { showLogistic: true, showType: true, showDate: true, showAddress: true, bgColor: '#f0f4ff', accentColor: '#4a6cf7', colCount: 3, columns: { c0: ['logistic', 'type'], c1: ['date', 'address'], c2: [] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },
   products: { showSubst: true, showPrice: true, showOrigQty: true, showFinalQty: true, locale: 'es-AR', currency: 'ARS', height: null, colSpan: 4 },
-  footer:   { storeName: '', phone: '', website: '', message: 'Gracias por tu compra', dark: true, mode: 'columns', imageUrl: '', columns: { left: ['name', 'phone', 'web'], right: ['msg'] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },
+  footer:   { storeName: '', phone: '', website: '', message: 'Gracias por tu compra', dark: true, mode: 'columns', imageUrl: '', colCount: 3, columns: { c0: ['name', 'phone', 'web'], c1: ['msg'], c2: [] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },
   divider:  { style: 'solid', color: '#e8e8e8', height: null, colSpan: 4 },
   text:     { content: 'Información importante del pedido', fontSize: 10, height: null, colSpan: 4 },
 }

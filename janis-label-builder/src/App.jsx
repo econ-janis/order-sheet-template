@@ -146,10 +146,28 @@ export default function App() {
       if (w.id !== widgetId) return w
       const customFields = { ...(w.data.customFields || {}), [key]: { content: 'Texto nuevo' } }
       const cols = w.data.columns || {}
-      const columns = { ...cols, left: [...(cols.left || []), key] }
+      const firstKey = Object.keys(cols)[0] || 'c0'
+      const columns = { ...cols, [firstKey]: [...(cols[firstKey] || []), key] }
       return { ...w, data: { ...w.data, customFields, columns } }
     }))
     setSelFieldKey(key)
+  }
+
+  function updateColCount(id, n) {
+    setWidgets(prev => prev.map(w => {
+      if (w.id !== id) return w
+      const count = Math.max(1, Math.min(6, n))
+      const cur = w.data.columns || {}
+      const oldCount = Object.keys(cur).length
+      const columns = {}
+      for (let i = 0; i < count; i++) columns['c' + i] = [...(cur['c' + i] || [])]
+      // shrinking: move fields from dropped columns into the last kept one
+      if (oldCount > count) {
+        const lastKey = 'c' + (count - 1)
+        for (let i = count; i < oldCount; i++) columns[lastKey] = [...columns[lastKey], ...(cur['c' + i] || [])]
+      }
+      return { ...w, data: { ...w.data, colCount: count, columns } }
+    }))
   }
 
   const selWidget = widgets.find(w => w.id === selId) ?? null
@@ -188,6 +206,7 @@ export default function App() {
         onUpdateFieldStyle={updateFieldStyle}
         onUpdateCustomField={updateCustomField}
         onAddCustomField={addCustomField}
+        onUpdateColCount={updateColCount}
       />
     </div>
   )

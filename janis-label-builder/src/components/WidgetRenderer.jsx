@@ -1,9 +1,13 @@
 import { useRef, useState } from 'react'
 import { resolveWidgetData, fmtCurrency } from '../utils/helpers'
 
-const COL_LABELS = { left: 'Izquierda', center: 'Centro', right: 'Derecha' }
+/* Generic internal-column keys derived from the widget's colCount (default 3). */
+function colKeysOf(d) {
+  const n = d.colCount ?? Object.keys(d.columns || {}).length ?? 3
+  return Array.from({ length: Math.max(1, n) }, (_, i) => 'c' + i)
+}
 
-/* ── Field-level style helper ── */
+/* ── Field-level style helper (edit mode shows a placeholder for hidden fields) ── */
 function makeRenderField(d, v, builtinFields) {
   return (k) => {
     const el = k.startsWith('custom_')
@@ -12,6 +16,34 @@ function makeRenderField(d, v, builtinFields) {
     const s = d.fieldStyles?.[k]
     return s ? <span style={s}>{el}</span> : el
   }
+}
+
+/* ── Display-mode cell: returns null for hidden fields, applies field styles ── */
+function makeDisplayCell(d, v, builtinFields) {
+  return (k) => {
+    let el
+    if (k.startsWith('custom_')) el = <div className="w-custom-field">{d.customFields?.[k]?.content || ''}</div>
+    else el = builtinFields[k]?.(d, v)
+    if (!el) return null
+    const s = d.fieldStyles?.[k]
+    return s ? <span style={s}>{el}</span> : el
+  }
+}
+
+/* ── Generic N-column display (non-selected) ── */
+function ColumnDisplay({ columns, colKeys, renderCell, wrapClass, wrapStyle }) {
+  return (
+    <div
+      className={`w-cols ${wrapClass || ''}`}
+      style={{ ...(wrapStyle || {}), display: 'grid', gridTemplateColumns: `repeat(${colKeys.length}, 1fr)` }}
+    >
+      {colKeys.map(col => (
+        <div key={col} className="w-col">
+          {(columns[col] || []).map(k => { const el = renderCell(k); return el ? <div key={k}>{el}</div> : null })}
+        </div>
+      ))}
+    </div>
+  )
 }
 
 /* ── N-column drag & drop layout ── */
@@ -67,10 +99,13 @@ function ColumnDrop({ columns, colKeys = ['left', 'right'], onColumnsChange, ren
   }
 
   return (
-    <div className={`col-drop col-drop-${colKeys.length} ${wrapClass || ''}`} style={wrapStyle}>
-      {colKeys.map(col => (
+    <div
+      className={`col-drop ${wrapClass || ''}`}
+      style={{ ...(wrapStyle || {}), gridTemplateColumns: `repeat(${colKeys.length}, 1fr)` }}
+    >
+      {colKeys.map((col, ci) => (
         <div key={col} {...colZone(col)}>
-          <div className="col-label">{COL_LABELS[col] || col}</div>
+          <div className="col-label">Columna {ci + 1}</div>
           {(columns[col] || []).map(k => (
             <div key={k} {...itemDrag(col, k)}>
               <span className="drag-handle"><i className="ti ti-grip-vertical" /></span>
@@ -84,11 +119,10 @@ function ColumnDrop({ columns, colKeys = ['left', 'right'], onColumnsChange, ren
 }
 
 /* ── Header ── */
-const HEADER_COL_KEYS = ['left', 'center', 'right']
-
 function Header({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
   const d = w.data
-  const cols = d.columns || { left: [], center: [], right: ['date', 'control', 'orderNum'] }
+  const cols = d.columns || {}
+  const colKeys = colKeysOf(d)
 
   const FIELDS = {
     date:     () => d.showDate     && <span>Fecha de emisión: <b>{v.date}</b></span>,
@@ -96,16 +130,14 @@ function Header({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
     orderNum: () => d.showOrderNum && <span>Número de factura</span>,
   }
 
-  const renderField = makeRenderField(d, v, FIELDS)
-
   if (isSelected) {
     return (
       <ColumnDrop
         columns={cols}
-        colKeys={HEADER_COL_KEYS}
+        colKeys={colKeys}
         onColumnsChange={next => onReorder(w.id, 'columns', next)}
         wrapClass="w-header-reorder"
-        renderField={renderField}
+        renderField={makeRenderField(d, v, FIELDS)}
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
       />
@@ -113,17 +145,12 @@ function Header({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
   }
 
   return (
-    <div className="w-header">
-      {HEADER_COL_KEYS.map(col => {
-        const items = (cols[col] || []).map(k => FIELDS[k]?.()).filter(Boolean)
-        if (!items.length) return null
-        return (
-          <div key={col} className={`w-header-col${col === 'right' ? ' w-header-col-right' : ''}`}>
-            {items}
-          </div>
-        )
-      })}
-    </div>
+    <ColumnDisplay
+      columns={cols}
+      colKeys={colKeys}
+      renderCell={makeDisplayCell(d, v, FIELDS)}
+      wrapClass="w-header"
+    />
   )
 }
 
@@ -138,17 +165,17 @@ const CLIENT_FIELDS = {
 
 function Client({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
   const d = w.data
-  const cols = d.columns || { left: ['name', 'ci', 'phone'], right: ['address', 'payment'] }
-
-  const renderField = makeRenderField(d, v, CLIENT_FIELDS)
+  const cols = d.columns || {}
+  const colKeys = colKeysOf(d)
 
   if (isSelected) {
     return (
       <ColumnDrop
         columns={cols}
+        colKeys={colKeys}
         onColumnsChange={next => onReorder(w.id, 'columns', next)}
         wrapClass="w-client-reorder"
-        renderField={renderField}
+        renderField={makeRenderField(d, v, CLIENT_FIELDS)}
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
       />
@@ -156,14 +183,12 @@ function Client({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
   }
 
   return (
-    <div className="w-client-2col">
-      <div className="w-col">
-        {(cols.left || []).map(k => { const el = CLIENT_FIELDS[k]?.(d, v); return el ? <div key={k}>{el}</div> : null })}
-      </div>
-      <div className="w-col">
-        {(cols.right || []).map(k => { const el = CLIENT_FIELDS[k]?.(d, v); return el ? <div key={k}>{el}</div> : null })}
-      </div>
-    </div>
+    <ColumnDisplay
+      columns={cols}
+      colKeys={colKeys}
+      renderCell={makeDisplayCell(d, v, CLIENT_FIELDS)}
+      wrapClass="w-client-cols"
+    />
   )
 }
 
@@ -177,19 +202,19 @@ const DISPATCH_FIELDS = {
 
 function Dispatch({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
   const d = w.data
-  const cols = d.columns || { left: ['logistic', 'type'], right: ['date', 'address'] }
+  const cols = d.columns || {}
+  const colKeys = colKeysOf(d)
   const style = { background: d.bgColor, borderTop: `2px solid ${d.accentColor}`, borderBottom: `2px solid ${d.accentColor}` }
-
-  const renderField = makeRenderField(d, v, DISPATCH_FIELDS)
 
   if (isSelected) {
     return (
       <ColumnDrop
         columns={cols}
+        colKeys={colKeys}
         onColumnsChange={next => onReorder(w.id, 'columns', next)}
         wrapClass="w-dispatch-reorder"
         wrapStyle={style}
-        renderField={renderField}
+        renderField={makeRenderField(d, v, DISPATCH_FIELDS)}
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
       />
@@ -197,14 +222,13 @@ function Dispatch({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
   }
 
   return (
-    <div className="w-dispatch-2col" style={style}>
-      <div className="w-col">
-        {(cols.left || []).map(k => { const el = DISPATCH_FIELDS[k]?.(d, v); return el ? <div key={k}>{el}</div> : null })}
-      </div>
-      <div className="w-col">
-        {(cols.right || []).map(k => { const el = DISPATCH_FIELDS[k]?.(d, v); return el ? <div key={k}>{el}</div> : null })}
-      </div>
-    </div>
+    <ColumnDisplay
+      columns={cols}
+      colKeys={colKeys}
+      renderCell={makeDisplayCell(d, v, DISPATCH_FIELDS)}
+      wrapClass="w-dispatch-cols"
+      wrapStyle={style}
+    />
   )
 }
 
@@ -253,7 +277,8 @@ const FOOTER_FIELDS = {
 
 function Footer({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
   const d = w.data
-  const cols = d.columns || { left: ['name', 'phone', 'web'], right: ['msg'] }
+  const cols = d.columns || {}
+  const colKeys = colKeysOf(d)
   const bg = d.dark ? '#1a1a1a' : '#f8f8f8'
   const c  = { name: d.dark ? '#fff' : '#111', text: d.dark ? '#aaa' : '#555', msg: d.dark ? '#666' : '#aaa' }
 
@@ -261,13 +286,13 @@ function Footer({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
     return (
       <div className="w-footer w-footer-img" style={{ background: bg }}>
         {d.imageUrl
-          ? <img src={d.imageUrl} alt="Footer" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          ? <img src={d.imageUrl} alt="Footer" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }} />
           : <span style={{ color: '#888', fontSize: 10 }}>Ingresá una URL de imagen en Propiedades</span>}
       </div>
     )
   }
 
-  // Footer builtin fields need c, so wrap them
+  // Footer builtin fields need c, so wrap them to the (d, v) signature
   const FOOTER_BUILTIN = {
     name:  (d, v) => FOOTER_FIELDS.name(d, v, c),
     phone: (d, v) => FOOTER_FIELDS.phone(d, v, c),
@@ -275,16 +300,15 @@ function Footer({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
     msg:   (d, v) => FOOTER_FIELDS.msg(d, v, c),
   }
 
-  const renderField = makeRenderField(d, v, FOOTER_BUILTIN)
-
   if (isSelected) {
     return (
       <ColumnDrop
         columns={cols}
+        colKeys={colKeys}
         onColumnsChange={next => onReorder(w.id, 'columns', next)}
         wrapClass="w-footer-reorder"
         wrapStyle={{ background: bg }}
-        renderField={renderField}
+        renderField={makeRenderField(d, v, FOOTER_BUILTIN)}
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
       />
@@ -292,14 +316,13 @@ function Footer({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
   }
 
   return (
-    <div className="w-footer" style={{ background: bg }}>
-      <div className="w-col" style={{ color: c.text }}>
-        {(cols.left || []).map(k => { const el = FOOTER_FIELDS[k]?.(d, v, c); return el ? <div key={k}>{el}</div> : null })}
-      </div>
-      <div className="w-col" style={{ color: c.text, textAlign: 'right' }}>
-        {(cols.right || []).map(k => { const el = FOOTER_FIELDS[k]?.(d, v, c); return el ? <div key={k}>{el}</div> : null })}
-      </div>
-    </div>
+    <ColumnDisplay
+      columns={cols}
+      colKeys={colKeys}
+      renderCell={makeDisplayCell(d, v, FOOTER_BUILTIN)}
+      wrapClass="w-footer w-footer-cols"
+      wrapStyle={{ background: bg, color: c.text }}
+    />
   )
 }
 

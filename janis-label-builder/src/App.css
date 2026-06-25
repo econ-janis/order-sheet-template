@@ -289,8 +289,23 @@
 .col-drop {
   display: grid; gap: 6px; padding: 8px 10px;
 }
-.col-drop-2 { grid-template-columns: 1fr 1fr; }
-.col-drop-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+/* Generic N-column display (non-selected) */
+.w-cols { gap: 14px; padding: 8px 14px; }
+.w-header.w-cols { padding: 8px 14px; }
+.w-footer.w-cols { padding: 7px 14px; }
+
+/* Column-count +/- control */
+.colcount-ctl { display: flex; align-items: center; gap: 8px; }
+.cc-btn {
+  width: 24px; height: 24px; border-radius: 5px; cursor: pointer;
+  border: 0.5px solid var(--color-border-secondary);
+  background: var(--color-background-primary); color: var(--color-text-primary);
+  font-size: 15px; line-height: 1; display: flex; align-items: center; justify-content: center;
+}
+.cc-btn:hover:not(:disabled) { background: var(--color-background-tertiary); border-color: #4a6cf7; }
+.cc-btn:disabled { opacity: .35; cursor: not-allowed; }
+.cc-val { min-width: 16px; text-align: center; font-weight: 600; font-size: 12px; }
 .col-zone {
   display: flex; flex-direction: column; gap: 3px;
   min-height: 48px; padding: 5px 6px;

@@ -18,7 +18,7 @@ function copyText(text, el) {
   })
 }
 
-export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdateFieldStyle, onUpdateCustomField, onAddCustomField }) {
+export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdateFieldStyle, onUpdateCustomField, onAddCustomField, onUpdateColCount }) {
   if (!selWidget) {
     return (
       <div className="parea">
@@ -60,6 +60,26 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
             onInput={e => onUpdateProp(selWidget.id, 'colSpan', Math.max(1, Math.min(4, +e.target.value)))}
           />
         </div>
+        {hasColumns && (
+          <div className="prow">
+            <label>Columnas internas</label>
+            <div className="colcount-ctl">
+              <button
+                className="cc-btn"
+                title="Quitar columna"
+                disabled={(selWidget.data.colCount ?? 3) <= 1}
+                onClick={() => onUpdateColCount(selWidget.id, (selWidget.data.colCount ?? 3) - 1)}
+              >−</button>
+              <span className="cc-val">{selWidget.data.colCount ?? 3}</span>
+              <button
+                className="cc-btn"
+                title="Agregar columna"
+                disabled={(selWidget.data.colCount ?? 3) >= 6}
+                onClick={() => onUpdateColCount(selWidget.id, (selWidget.data.colCount ?? 3) + 1)}
+              >+</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 2. Campo seleccionado */}
@@ -125,7 +145,7 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
         <div className="pgt">Widget: {selWidget.type}</div>
         {Object.entries(selWidget.data).map(([k, v]) => {
           if (Array.isArray(v) || (v !== null && typeof v === 'object')) return null
-          if (k === 'height' || k === 'colSpan') return null
+          if (k === 'height' || k === 'colSpan' || k === 'colCount') return null
           if (k === 'imageUrl' && selWidget.data.mode !== 'image' && selWidget.type !== 'logo') return null
           const lbl = PLABELS[k] || k
           if (k === 'objectFit') {
