@@ -61,23 +61,27 @@ function makeDisplayCell(d, v, builtinFields, sampleData) {
 }
 
 /* ── Generic N-column display (non-selected) ── */
-function ColumnDisplay({ columns, colKeys, renderCell, wrapClass, wrapStyle }) {
+function ColumnDisplay({ columns, colKeys, renderCell, wrapClass, wrapStyle, columnStyles }) {
   return (
     <div
       className={`w-cols ${wrapClass || ''}`}
       style={{ ...(wrapStyle || {}), display: 'grid', gridTemplateColumns: `repeat(${colKeys.length}, 1fr)` }}
     >
-      {colKeys.map(col => (
-        <div key={col} className="w-col">
-          {(columns[col] || []).map(k => { const el = renderCell(k); return el ? <div key={k}>{el}</div> : null })}
-        </div>
-      ))}
+      {colKeys.map(col => {
+        const cs = (columnStyles || {})[col]
+        const colStyle = cs?.border ? { border: `${cs.width || 1}px ${cs.style || 'dashed'} ${cs.color || '#cccccc'}`, borderRadius: 4, padding: '4px 6px' } : {}
+        return (
+          <div key={col} className="w-col" style={colStyle}>
+            {(columns[col] || []).map(k => { const el = renderCell(k); return el ? <div key={k}>{el}</div> : null })}
+          </div>
+        )
+      })}
     </div>
   )
 }
 
 /* ── N-column drag & drop layout ── */
-function ColumnDrop({ columns, colKeys = ['left', 'right'], onColumnsChange, renderField, wrapClass, wrapStyle, selFieldKey, onFieldSelect }) {
+function ColumnDrop({ columns, colKeys = ['left', 'right'], onColumnsChange, renderField, wrapClass, wrapStyle, selFieldKey, onFieldSelect, columnStyles }) {
   const dragging = useRef(null)
   const [overSlot, setOverSlot] = useState(null)
 
@@ -133,8 +137,11 @@ function ColumnDrop({ columns, colKeys = ['left', 'right'], onColumnsChange, ren
       className={`col-drop ${wrapClass || ''}`}
       style={{ ...(wrapStyle || {}), gridTemplateColumns: `repeat(${colKeys.length}, 1fr)` }}
     >
-      {colKeys.map((col, ci) => (
-        <div key={col} {...colZone(col)}>
+      {colKeys.map((col, ci) => {
+        const cs = (columnStyles || {})[col]
+        const zoneStyle = cs?.border ? { outline: `2px solid ${cs.color || '#cccccc'}` } : {}
+        return (
+        <div key={col} {...colZone(col)} style={{ ...zoneStyle }}>
           <div className="col-label">Columna {ci + 1}</div>
           {(columns[col] || []).map(k => (
             <div key={k} {...itemDrag(col, k)}>

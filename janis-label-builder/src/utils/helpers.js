@@ -69,6 +69,22 @@ export function resolveWidgetData(w, sampleData) {
     web: d.website || (r.store || {}).website || '',
     msg: d.message || '',
   }
+  if (w.type === 'summary') return {
+    orderNum: o.commerceSequentialId || '—',
+    date: fmtDate(o.creationDate),
+    total: fmtCurrency(o.totalAmount, 'es-AR', 'ARS'),
+    clientName: `${cp.firstName || ''} ${cp.lastName || ''}`.trim() || '—',
+    ci: cp.document || '—',
+    phone: cp.phone || '—',
+    address: `${addr.street || ''} ${addr.number || ''}, ${addr.city || ''}, ${addr.state || ''}, ${addr.country || ''}`,
+    logistic: lg.deliveryCompany || '—',
+    deliveryType: lg.deliveryChannel || '—',
+    deliveryDate: fmtDate(lg.shippingEstimateDate),
+    payment: payName || '—',
+    itemCount: (o.items || []).length,
+    storeName: (r.store || {}).name || '—',
+    storePhone: (r.store || {}).phone || '—',
+  }
   return {}
 }
 
@@ -158,6 +174,44 @@ export function genHbs(w) {
     `  <span>{{root.store.website}}</span>\n` +
     `  <p>${d.message}</p>\n</div>`
   )
+  if (w.type === 'summary') {
+    const cols = d.columns || {}
+    const colKeys = Array.from({ length: Math.max(1, d.colCount ?? Object.keys(cols).length ?? 3) }, (_, i) => 'c' + i)
+    const fieldHbs = {
+      orderNum:     '{{order.commerceSequentialId}}',
+      date:         '{{formatDate order.creationDate "dd/MM/yyyy"}}',
+      total:        '{{currency order.totalAmount locale="es-AR" currencyCode="ARS"}}',
+      clientName:   '{{order.clientProfileData.firstName}} {{order.clientProfileData.lastName}}',
+      ci:           '{{order.clientProfileData.document}}',
+      phone:        '{{order.clientProfileData.phone}}',
+      address:      '{{order.shippingData.address.street}} {{order.shippingData.address.number}}, {{order.shippingData.address.city}}, {{order.shippingData.address.state}}, {{order.shippingData.address.country}}',
+      logistic:     '{{order.shippingData.logisticsInfo.[0].deliveryCompany}}',
+      deliveryType: '{{order.shippingData.logisticsInfo.[0].deliveryChannel}}',
+      deliveryDate: '{{formatDate order.shippingData.logisticsInfo.[0].shippingEstimateDate "dd/MM/yyyy"}}',
+      payment:      '{{order.paymentData.transactions.[0].payments.[0].paymentSystemName}}',
+      itemCount:    '{{count order.items}}',
+      storeName:    '{{root.store.name}}',
+      storePhone:   '{{root.store.phone}}',
+    }
+    const labels = {
+      orderNum: 'N° de Pedido', date: 'Fecha creación', total: 'Total', clientName: 'Nombre y apellido',
+      ci: 'C.I.', phone: 'Teléfono', address: 'Dirección', logistic: 'Logística',
+      deliveryType: 'Tipo envío', deliveryDate: 'Fecha entrega', payment: 'Forma de pago',
+      itemCount: 'Cant. ítems', storeName: 'Tienda', storePhone: 'Tel. tienda',
+    }
+    let html = `<div class="summary" style="display:grid;grid-template-columns:repeat(${colKeys.length},1fr)">\n`
+    for (const col of colKeys) {
+      html += `  <div class="summary-col">\n`
+      for (const k of (cols[col] || [])) {
+        const lbl = labels[k] || k
+        const val = fieldHbs[k] || k
+        html += `    <div class="wcf"><label>${lbl}</label><span>${val}</span></div>\n`
+      }
+      html += `  </div>\n`
+    }
+    html += `</div>`
+    return html
+  }
   if (w.type === 'divider') return `<hr style="border-top: 1px ${d.style} ${d.color};">`
   if (w.type === 'text') {
     const styles = [`font-size:${d.fontSize}px`]
