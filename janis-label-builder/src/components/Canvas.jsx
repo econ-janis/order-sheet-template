@@ -261,7 +261,7 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                         </div>
 
                         <WidgetRenderer widget={w} sampleData={sampleData} isSelected={selId === w.id} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
-                        {((dragActive && dragId !== w.id) || nativeDrag) && ['left', 'right'].map(side => (
+                        {(dragActive && dragId !== w.id) && ['left', 'right'].map(side => (
                           <div
                             key={side}
                             className={`side-zone side-zone-${side}${splitKey === `${w.id}:${side}` ? ' sz-hot' : ''}`}
