@@ -275,6 +275,13 @@
   transition: background .08s;
 }
 .hbs-ac-item:hover { background: var(--color-background-secondary); }
+.hbs-ac-expr { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hbs-ac-val {
+  flex-shrink: 0; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: var(--font-sans, sans-serif); font-size: 9px;
+  color: #4a6cf7; background: rgba(74,108,247,.1);
+  padding: 1px 5px; border-radius: 3px;
+}
 .hbsc {
   font-size: 9px; padding: 2px 5px;
   background: var(--color-background-secondary);

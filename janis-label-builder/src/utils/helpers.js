@@ -76,6 +76,42 @@ export function esc(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
+/* ── Helper/value resolution against the sample data ──────────────────────────
+   Replaces {{ ... }} tokens inside a string with their resolved sample value so
+   custom fields can preview the actual value a helper produces. Unknown/complex
+   helpers are left as-is. */
+function getPath(path, data) {
+  const norm = String(path).replace(/\[(\d+)\]/g, '.$1').replace(/^this\./, '').replace(/^\./, '')
+  const segs = norm.split('.').filter(Boolean)
+  if (!segs.length || /[^\w.\[\]0-9]/.test(norm)) return undefined  // not a real path (e.g. "...")
+  let cur = data
+  for (const s of segs) {
+    if (cur == null) return undefined
+    cur = cur[s]
+  }
+  return cur
+}
+
+function resolveExpr(expr, data) {
+  const parts = expr.trim().split(/\s+/)
+  if (parts.length === 1) return getPath(parts[0], data)
+  const [name, arg] = parts
+  if (name === 'formatDate') return fmtDate(getPath(arg, data))
+  if (name === 'currency') return fmtCurrency(Number(getPath(arg, data)), 'es-AR', 'ARS')
+  if (name === 'uppercase') return String(getPath(arg, data) ?? '').toUpperCase()
+  if (name === 'count' || name === 'sumArray') { const v = getPath(arg, data); return Array.isArray(v) ? v.length : v }
+  // unknown helper: best-effort resolve of its first path argument
+  return getPath(arg, data)
+}
+
+export function resolveTemplate(str, sampleData) {
+  if (!str) return str
+  return str.replace(/\{\{([^}]+)\}\}/g, (m, expr) => {
+    const v = resolveExpr(expr, sampleData)
+    return v == null || v === '' ? m : String(v)
+  })
+}
+
 export function genHbs(w) {
   const d = w.data
   if (w.type === 'header') return (

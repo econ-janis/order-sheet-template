@@ -153,6 +153,25 @@ export default function App() {
     setSelFieldKey(key)
   }
 
+  // Click on a helper suggestion: surface the value at the top of the widget
+  // (a new custom field holding the helper) AND register the helper as a chip.
+  function addHelper(widgetId, helper) {
+    let newKey = null
+    setWidgets(prev => prev.map(w => {
+      if (w.id !== widgetId) return w
+      const extraHbs = [...new Set([...(w.data.extraHbs || []), helper])]
+      const cols = w.data.columns
+      if (!cols) return { ...w, data: { ...w.data, extraHbs } }   // non-column widget: chip only
+      const key = 'custom_' + uid()
+      newKey = key
+      const customFields = { ...(w.data.customFields || {}), [key]: { content: helper } }
+      const firstKey = Object.keys(cols)[0] || 'c0'
+      const columns = { ...cols, [firstKey]: [key, ...(cols[firstKey] || [])] }  // prepend = arriba
+      return { ...w, data: { ...w.data, customFields, columns, extraHbs } }
+    }))
+    if (newKey) setSelFieldKey(newKey)
+  }
+
   function updateColCount(id, n) {
     setWidgets(prev => prev.map(w => {
       if (w.id !== id) return w
@@ -207,6 +226,7 @@ export default function App() {
         onUpdateCustomField={updateCustomField}
         onAddCustomField={addCustomField}
         onUpdateColCount={updateColCount}
+        onAddHelper={addHelper}
       />
     </div>
   )

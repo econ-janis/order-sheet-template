@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { PLABELS, HBS_BY_TYPE } from '../data/widgetDefs'
+import { resolveTemplate } from '../utils/helpers'
 
 const WIDGETS_WITH_COLUMNS = ['header', 'client', 'dispatch', 'footer']
 
@@ -22,38 +23,19 @@ function copyText(text, el) {
   })
 }
 
-function HbsAutocomplete({ hbsList, selFieldKey, selWidget, onUpdateCustomField }) {
+function HbsAutocomplete({ hbsList, selWidget, sampleData, onAddHelper }) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const inputRef = useRef(null)
 
-  // Suggestions: first show widget-specific helpers, then all others
+  // Suggestions: widget-specific helpers first, then every other available helper
   const pool = [...new Set([...hbsList, ...ALL_HBS])]
   const q = query.trim().toLowerCase()
   const suggestions = q ? pool.filter(h => h.toLowerCase().includes(q)) : pool
 
-  function insertHelper(h) {
-    const isCustom = selFieldKey?.startsWith('custom_')
-    if (isCustom && selWidget) {
-      // Insert at cursor position inside the textarea, or append
-      const current = selWidget.data.customFields?.[selFieldKey]?.content || ''
-      const ta = document.querySelector('textarea[data-field-key]')
-      if (ta && ta.dataset.fieldKey === selFieldKey) {
-        const start = ta.selectionStart ?? current.length
-        const end = ta.selectionEnd ?? current.length
-        const next = current.slice(0, start) + h + current.slice(end)
-        onUpdateCustomField(selWidget.id, selFieldKey, next)
-        // Restore caret after React re-render
-        requestAnimationFrame(() => {
-          ta.selectionStart = ta.selectionEnd = start + h.length
-          ta.focus()
-        })
-      } else {
-        onUpdateCustomField(selWidget.id, selFieldKey, current + h)
-      }
-    } else {
-      navigator.clipboard.writeText(h)
-    }
+  function pick(h) {
+    if (!h || !selWidget) return
+    onAddHelper(selWidget.id, h)
     setQuery('')
     setOpen(false)
     inputRef.current?.focus()
@@ -73,11 +55,7 @@ function HbsAutocomplete({ hbsList, selFieldKey, selWidget, onUpdateCustomField 
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 160)}
           onKeyDown={e => {
-            if (e.key === 'Enter' && query.trim()) {
-              const match = suggestions[0] || query.trim()
-              insertHelper(match)
-              e.preventDefault()
-            }
+            if (e.key === 'Enter' && query.trim()) { pick(suggestions[0] || query.trim()); e.preventDefault() }
             if (e.key === 'Escape') { setQuery(''); setOpen(false) }
           }}
         />
@@ -89,19 +67,24 @@ function HbsAutocomplete({ hbsList, selFieldKey, selWidget, onUpdateCustomField 
       </div>
       {open && suggestions.length > 0 && (
         <div className="hbs-ac-dropdown">
-          {suggestions.slice(0, 12).map(h => (
-            <div key={h} className="hbs-ac-item" onMouseDown={() => insertHelper(h)}>
-              <i className="ti ti-braces" style={{ fontSize: 9, opacity: .5 }} />
-              <span>{h}</span>
-            </div>
-          ))}
+          {suggestions.slice(0, 12).map(h => {
+            const val = sampleData ? resolveTemplate(h, sampleData) : ''
+            const showVal = val && val !== h
+            return (
+              <div key={h} className="hbs-ac-item" onMouseDown={() => pick(h)}>
+                <i className="ti ti-braces" style={{ fontSize: 9, opacity: .5 }} />
+                <span className="hbs-ac-expr">{h}</span>
+                {showVal && <span className="hbs-ac-val">{val}</span>}
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
   )
 }
 
-export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdateFieldStyle, onUpdateCustomField, onAddCustomField, onUpdateColCount, onInsertHelper }) {
+export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdateFieldStyle, onUpdateCustomField, onAddCustomField, onUpdateColCount, onAddHelper, sampleData }) {
   if (!selWidget) {
     return (
       <div className="parea">
@@ -113,7 +96,7 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
     )
   }
 
-  const hbsList = HBS_BY_TYPE[selWidget.type] || []
+  const hbsList = [...new Set([...(HBS_BY_TYPE[selWidget.type] || []), ...(selWidget.data.extraHbs || [])])]
   const fieldStyles = selWidget.data.fieldStyles?.[selFieldKey] || {}
   const isCustomField = selFieldKey?.startsWith('custom_')
   const hasColumns = WIDGETS_WITH_COLUMNS.includes(selWidget.type)
@@ -330,9 +313,9 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
         <div className="pgt">Helpers disponibles</div>
         <HbsAutocomplete
           hbsList={hbsList}
-          selFieldKey={selFieldKey}
           selWidget={selWidget}
-          onUpdateCustomField={onUpdateCustomField}
+          sampleData={sampleData}
+          onAddHelper={onAddHelper}
         />
         {hbsList.length > 0 && (
           <div className="hbs-chips" style={{ marginTop: 6 }}>

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { resolveWidgetData, fmtCurrency } from '../utils/helpers'
+import { resolveWidgetData, fmtCurrency, resolveTemplate } from '../utils/helpers'
 
 /* Generic internal-column keys derived from the widget's colCount (default 3). */
 function colKeysOf(d) {
@@ -7,11 +7,18 @@ function colKeysOf(d) {
   return Array.from({ length: Math.max(1, n) }, (_, i) => 'c' + i)
 }
 
+/* Custom field content with {{helpers}} resolved to their sample value. */
+function customContent(d, k, sampleData) {
+  const raw = d.customFields?.[k]?.content
+  if (raw == null) return ''
+  return sampleData ? resolveTemplate(raw, sampleData) : raw
+}
+
 /* ── Field-level style helper (edit mode shows a placeholder for hidden fields) ── */
-function makeRenderField(d, v, builtinFields) {
+function makeRenderField(d, v, builtinFields, sampleData) {
   return (k) => {
     const el = k.startsWith('custom_')
-      ? <div className="w-custom-field">{d.customFields?.[k]?.content || 'Campo de texto'}</div>
+      ? <div className="w-custom-field">{customContent(d, k, sampleData) || 'Campo de texto'}</div>
       : builtinFields[k]?.(d, v) || <span className="field-hidden">{k}</span>
     const s = d.fieldStyles?.[k]
     return s ? <span style={s}>{el}</span> : el
@@ -19,10 +26,10 @@ function makeRenderField(d, v, builtinFields) {
 }
 
 /* ── Display-mode cell: returns null for hidden fields, applies field styles ── */
-function makeDisplayCell(d, v, builtinFields) {
+function makeDisplayCell(d, v, builtinFields, sampleData) {
   return (k) => {
     let el
-    if (k.startsWith('custom_')) el = <div className="w-custom-field">{d.customFields?.[k]?.content || ''}</div>
+    if (k.startsWith('custom_')) el = <div className="w-custom-field">{customContent(d, k, sampleData)}</div>
     else el = builtinFields[k]?.(d, v)
     if (!el) return null
     const s = d.fieldStyles?.[k]
@@ -119,7 +126,7 @@ function ColumnDrop({ columns, colKeys = ['left', 'right'], onColumnsChange, ren
 }
 
 /* ── Header ── */
-function Header({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
+function Header({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampleData }) {
   const d = w.data
   const cols = d.columns || {}
   const colKeys = colKeysOf(d)
@@ -137,7 +144,7 @@ function Header({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
         colKeys={colKeys}
         onColumnsChange={next => onReorder(w.id, 'columns', next)}
         wrapClass="w-header-reorder"
-        renderField={makeRenderField(d, v, FIELDS)}
+        renderField={makeRenderField(d, v, FIELDS, sampleData)}
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
       />
@@ -148,7 +155,7 @@ function Header({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
     <ColumnDisplay
       columns={cols}
       colKeys={colKeys}
-      renderCell={makeDisplayCell(d, v, FIELDS)}
+      renderCell={makeDisplayCell(d, v, FIELDS, sampleData)}
       wrapClass="w-header"
     />
   )
@@ -163,7 +170,7 @@ const CLIENT_FIELDS = {
   payment: (d, v) => d.showPayment && <div className="wcf"><label>Forma de pago</label><span>{v.payment}</span></div>,
 }
 
-function Client({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
+function Client({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampleData }) {
   const d = w.data
   const cols = d.columns || {}
   const colKeys = colKeysOf(d)
@@ -175,7 +182,7 @@ function Client({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
         colKeys={colKeys}
         onColumnsChange={next => onReorder(w.id, 'columns', next)}
         wrapClass="w-client-reorder"
-        renderField={makeRenderField(d, v, CLIENT_FIELDS)}
+        renderField={makeRenderField(d, v, CLIENT_FIELDS, sampleData)}
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
       />
@@ -186,7 +193,7 @@ function Client({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
     <ColumnDisplay
       columns={cols}
       colKeys={colKeys}
-      renderCell={makeDisplayCell(d, v, CLIENT_FIELDS)}
+      renderCell={makeDisplayCell(d, v, CLIENT_FIELDS, sampleData)}
       wrapClass="w-client-cols"
     />
   )
@@ -200,7 +207,7 @@ const DISPATCH_FIELDS = {
   address:  (d, v) => d.showAddress  && <div className="wdi"><label>Dirección</label><span>{v.address}</span></div>,
 }
 
-function Dispatch({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
+function Dispatch({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampleData }) {
   const d = w.data
   const cols = d.columns || {}
   const colKeys = colKeysOf(d)
@@ -214,7 +221,7 @@ function Dispatch({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
         onColumnsChange={next => onReorder(w.id, 'columns', next)}
         wrapClass="w-dispatch-reorder"
         wrapStyle={style}
-        renderField={makeRenderField(d, v, DISPATCH_FIELDS)}
+        renderField={makeRenderField(d, v, DISPATCH_FIELDS, sampleData)}
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
       />
@@ -225,7 +232,7 @@ function Dispatch({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
     <ColumnDisplay
       columns={cols}
       colKeys={colKeys}
-      renderCell={makeDisplayCell(d, v, DISPATCH_FIELDS)}
+      renderCell={makeDisplayCell(d, v, DISPATCH_FIELDS, sampleData)}
       wrapClass="w-dispatch-cols"
       wrapStyle={style}
     />
@@ -275,7 +282,7 @@ const FOOTER_FIELDS = {
   msg:   (d, v, c) => v.msg   && <div style={{ color: c.msg,  fontSize: 9 }}>{v.msg}</div>,
 }
 
-function Footer({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
+function Footer({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampleData }) {
   const d = w.data
   const cols = d.columns || {}
   const colKeys = colKeysOf(d)
@@ -308,7 +315,7 @@ function Footer({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
         onColumnsChange={next => onReorder(w.id, 'columns', next)}
         wrapClass="w-footer-reorder"
         wrapStyle={{ background: bg }}
-        renderField={makeRenderField(d, v, FOOTER_BUILTIN)}
+        renderField={makeRenderField(d, v, FOOTER_BUILTIN, sampleData)}
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
       />
@@ -319,7 +326,7 @@ function Footer({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect }) {
     <ColumnDisplay
       columns={cols}
       colKeys={colKeys}
-      renderCell={makeDisplayCell(d, v, FOOTER_BUILTIN)}
+      renderCell={makeDisplayCell(d, v, FOOTER_BUILTIN, sampleData)}
       wrapClass="w-footer w-footer-cols"
       wrapStyle={{ background: bg, color: c.text }}
     />
@@ -342,12 +349,12 @@ export default function WidgetRenderer({ widget, sampleData, isSelected, onReord
   const d = widget.data
   const v = resolveWidgetData(widget, sampleData)
 
-  if (widget.type === 'header')   return <Header   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
+  if (widget.type === 'header')   return <Header   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} />
   if (widget.type === 'logo')     return <Logo d={d} />
-  if (widget.type === 'client')   return <Client   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
-  if (widget.type === 'dispatch') return <Dispatch w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
+  if (widget.type === 'client')   return <Client   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} />
+  if (widget.type === 'dispatch') return <Dispatch w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} />
   if (widget.type === 'products') return <Products d={d} v={v} />
-  if (widget.type === 'footer')   return <Footer   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
+  if (widget.type === 'footer')   return <Footer   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} />
   if (widget.type === 'divider')  return <div className="w-divider"><hr style={{ borderTop: `1px ${d.style} ${d.color}` }} /></div>
   if (widget.type === 'text')     return <div className="w-text" style={{ fontSize: d.fontSize }}>{d.content}</div>
   return null
