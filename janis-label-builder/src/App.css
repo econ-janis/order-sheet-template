@@ -337,9 +337,10 @@
 .col-zone {
   display: flex; flex-direction: column; gap: 3px;
   min-height: 48px; padding: 5px 6px;
-  border: 1.5px dashed #d8d8d8; border-radius: 5px;
+  border: 1.5px dashed transparent; border-radius: 5px;
   background: rgba(255,255,255,.5); transition: all .1s;
 }
+.col-zone:hover { border-color: #d8d8d8; }
 .col-zone.col-zone-over { border-color: #4a6cf7; background: rgba(74,108,247,.06); }
 .col-label {
   font-size: 8px; font-weight: 500; color: #bbb;
@@ -535,3 +536,4 @@
 /* Plantillas button accent */
 .tpl-trigger { color: #4a6cf7 !important; border-color: #c7d2fe !important; }
 .tpl-trigger:hover { background: #eef2ff !important; }
+.col-border-row { border-top: 0.5px solid var(--color-border-secondary); padding-top: 6px; margin-top: 2px; }

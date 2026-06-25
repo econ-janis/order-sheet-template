@@ -2,7 +2,12 @@ import { useState, useRef } from 'react'
 import { PLABELS, HBS_BY_TYPE } from '../data/widgetDefs'
 import { resolveTemplate } from '../utils/helpers'
 
-const WIDGETS_WITH_COLUMNS = ['header', 'client', 'dispatch', 'footer']
+const WIDGETS_WITH_COLUMNS = ['header', 'client', 'dispatch', 'footer', 'summary']
+
+function colKeysOf(d) {
+  const n = d.colCount ?? Object.keys(d.columns || {}).length ?? 3
+  return Array.from({ length: Math.max(1, n) }, (_, i) => 'c' + i)
+}
 
 const FONT_FAMILIES = [
   { value: '',                          label: 'Por defecto' },
@@ -84,7 +89,7 @@ function HbsAutocomplete({ hbsList, selWidget, sampleData, onAddHelper }) {
   )
 }
 
-export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdateFieldStyle, onUpdateCustomField, onUpdateCustomFieldLabel, onAddCustomField, onUpdateColCount, onAddHelper, sampleData }) {
+export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdateFieldStyle, onUpdateCustomField, onUpdateCustomFieldLabel, onAddCustomField, onUpdateColCount, onAddHelper, sampleData, onUpdateColumnStyle }) {
   if (!selWidget) {
     return (
       <div className="parea">
@@ -364,6 +369,43 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
         >
           + Agregar texto
         </button>
+      )}
+
+      {/* 4b. Bordes de columnas */}
+      {hasColumns && (
+        <div className="pgroup">
+          <div className="pgt">Bordes de columnas</div>
+          {colKeysOf(selWidget.data).map((col, ci) => {
+            const cs = selWidget.data.columnStyles?.[col] || {}
+            return (
+              <div key={col} className="col-border-row">
+                <div className="pgt" style={{ fontSize: 9, marginBottom: 4 }}>Columna {ci + 1}</div>
+                <div className="prow prow-inline">
+                  <label>Visible</label>
+                  <input type="checkbox" checked={!!cs.border} onChange={e => onUpdateColumnStyle(selWidget.id, col, 'border', e.target.checked)} />
+                </div>
+                {cs.border && (<>
+                  <div className="prow">
+                    <label>Color</label>
+                    <input key={`${col}_color_${cs.border}`} type="color" defaultValue={cs.color || '#cccccc'} style={{ height: 28, padding: '2px 4px', width: '100%' }} onChange={e => onUpdateColumnStyle(selWidget.id, col, 'color', e.target.value)} />
+                  </div>
+                  <div className="prow">
+                    <label>Tipo</label>
+                    <select key={`${col}_style_${cs.border}`} defaultValue={cs.style || 'dashed'} onChange={e => onUpdateColumnStyle(selWidget.id, col, 'style', e.target.value)}>
+                      <option value="solid">Continua</option>
+                      <option value="dashed">Guión</option>
+                      <option value="dotted">Punteada</option>
+                    </select>
+                  </div>
+                  <div className="prow">
+                    <label>Grosor (px)</label>
+                    <input key={`${col}_width_${cs.border}`} type="number" defaultValue={cs.width || 1} min={1} max={5} onInput={e => onUpdateColumnStyle(selWidget.id, col, 'width', +e.target.value)} />
+                  </div>
+                </>)}
+              </div>
+            )
+          })}
+        </div>
       )}
 
       {/* 5. Helpers */}

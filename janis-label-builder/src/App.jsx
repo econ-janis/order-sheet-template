@@ -182,6 +182,15 @@ export default function App() {
     if (newKey) setSelFieldKey(newKey)
   }
 
+  function updateColumnStyle(widgetId, colKey, prop, value) {
+    setWidgets(prev => prev.map(w => {
+      if (w.id !== widgetId) return w
+      const columnStyles = { ...(w.data.columnStyles || {}) }
+      columnStyles[colKey] = { ...(columnStyles[colKey] || {}), [prop]: value }
+      return { ...w, data: { ...w.data, columnStyles } }
+    }))
+  }
+
   function updateColCount(id, n) {
     setWidgets(prev => prev.map(w => {
       if (w.id !== id) return w
@@ -238,6 +247,7 @@ export default function App() {
         onAddCustomField={addCustomField}
         onUpdateColCount={updateColCount}
         onAddHelper={addHelper}
+        onUpdateColumnStyle={updateColumnStyle}
       />
     </div>
   )

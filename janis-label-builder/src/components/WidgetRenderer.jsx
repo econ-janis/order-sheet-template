@@ -141,16 +141,17 @@ function ColumnDrop({ columns, colKeys = ['left', 'right'], onColumnsChange, ren
         const cs = (columnStyles || {})[col]
         const zoneStyle = cs?.border ? { outline: `2px solid ${cs.color || '#cccccc'}` } : {}
         return (
-        <div key={col} {...colZone(col)} style={{ ...zoneStyle }}>
-          <div className="col-label">Columna {ci + 1}</div>
-          {(columns[col] || []).map(k => (
-            <div key={k} {...itemDrag(col, k)}>
-              <span className="drag-handle"><i className="ti ti-grip-vertical" /></span>
-              <div className="dlist-content">{renderField(k)}</div>
-            </div>
-          ))}
-        </div>
-      ))}
+          <div key={col} {...colZone(col)} style={{ ...zoneStyle }}>
+            <div className="col-label">Columna {ci + 1}</div>
+            {(columns[col] || []).map(k => (
+              <div key={k} {...itemDrag(col, k)}>
+                <span className="drag-handle"><i className="ti ti-grip-vertical" /></span>
+                <div className="dlist-content">{renderField(k)}</div>
+              </div>
+            ))}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -177,6 +178,7 @@ function Header({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampl
         renderField={makeRenderField(d, v, FIELDS, sampleData)}
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
+        columnStyles={d.columnStyles}
       />
     )
   }
@@ -187,6 +189,7 @@ function Header({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampl
       colKeys={colKeys}
       renderCell={makeDisplayCell(d, v, FIELDS, sampleData)}
       wrapClass="w-header"
+      columnStyles={d.columnStyles}
     />
   )
 }
@@ -215,6 +218,7 @@ function Client({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampl
         renderField={makeRenderField(d, v, CLIENT_FIELDS, sampleData)}
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
+        columnStyles={d.columnStyles}
       />
     )
   }
@@ -225,6 +229,7 @@ function Client({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampl
       colKeys={colKeys}
       renderCell={makeDisplayCell(d, v, CLIENT_FIELDS, sampleData)}
       wrapClass="w-client-cols"
+      columnStyles={d.columnStyles}
     />
   )
 }
@@ -254,6 +259,7 @@ function Dispatch({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sam
         renderField={makeRenderField(d, v, DISPATCH_FIELDS, sampleData)}
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
+        columnStyles={d.columnStyles}
       />
     )
   }
@@ -265,6 +271,7 @@ function Dispatch({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sam
       renderCell={makeDisplayCell(d, v, DISPATCH_FIELDS, sampleData)}
       wrapClass="w-dispatch-cols"
       wrapStyle={style}
+      columnStyles={d.columnStyles}
     />
   )
 }
@@ -348,6 +355,7 @@ function Footer({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampl
         renderField={makeRenderField(d, v, FOOTER_BUILTIN, sampleData)}
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
+        columnStyles={d.columnStyles}
       />
     )
   }
@@ -359,6 +367,57 @@ function Footer({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampl
       renderCell={makeDisplayCell(d, v, FOOTER_BUILTIN, sampleData)}
       wrapClass="w-footer w-footer-cols"
       wrapStyle={{ background: bg, color: c.text }}
+      columnStyles={d.columnStyles}
+    />
+  )
+}
+
+/* ── Summary ── */
+const SUMMARY_FIELDS = {
+  orderNum:     (d, v) => <div className="wcf"><label>N° de Pedido</label><span>{v.orderNum}</span></div>,
+  date:         (d, v) => <div className="wcf"><label>Fecha creación</label><span>{v.date}</span></div>,
+  total:        (d, v) => <div className="wcf"><label>Total</label><span>{v.total}</span></div>,
+  clientName:   (d, v) => <div className="wcf"><label>Nombre y apellido</label><span>{v.clientName}</span></div>,
+  ci:           (d, v) => <div className="wcf"><label>C.I.</label><span>{v.ci}</span></div>,
+  phone:        (d, v) => <div className="wcf"><label>Teléfono</label><span>{v.phone}</span></div>,
+  address:      (d, v) => <div className="wcf"><label>Dirección</label><span>{v.address}</span></div>,
+  logistic:     (d, v) => <div className="wcf"><label>Logística</label><span>{v.logistic}</span></div>,
+  deliveryType: (d, v) => <div className="wcf"><label>Tipo envío</label><span>{v.deliveryType}</span></div>,
+  deliveryDate: (d, v) => <div className="wcf"><label>Fecha entrega</label><span>{v.deliveryDate}</span></div>,
+  payment:      (d, v) => <div className="wcf"><label>Forma de pago</label><span>{v.payment}</span></div>,
+  itemCount:    (d, v) => <div className="wcf"><label>Cant. ítems</label><span>{v.itemCount}</span></div>,
+  storeName:    (d, v) => <div className="wcf"><label>Tienda</label><span>{v.storeName}</span></div>,
+  storePhone:   (d, v) => <div className="wcf"><label>Tel. tienda</label><span>{v.storePhone}</span></div>,
+}
+
+function Summary({ widget, mode, isSelected, onReorder, selFieldKey, onFieldSelect, sampleData }) {
+  const d = widget.data
+  const v = resolveWidgetData(widget, sampleData || {})
+  const cols = d.columns || {}
+  const colKeys = colKeysOf(d)
+
+  if (isSelected) {
+    return (
+      <ColumnDrop
+        columns={cols}
+        colKeys={colKeys}
+        onColumnsChange={next => onReorder(widget.id, 'columns', next)}
+        wrapClass="w-summary-reorder"
+        renderField={makeRenderField(d, v, SUMMARY_FIELDS, sampleData)}
+        selFieldKey={selFieldKey}
+        onFieldSelect={onFieldSelect}
+        columnStyles={d.columnStyles}
+      />
+    )
+  }
+
+  return (
+    <ColumnDisplay
+      columns={cols}
+      colKeys={colKeys}
+      renderCell={makeDisplayCell(d, v, SUMMARY_FIELDS, sampleData)}
+      wrapClass="w-summary-cols"
+      columnStyles={d.columnStyles}
     />
   )
 }
@@ -385,6 +444,7 @@ export default function WidgetRenderer({ widget, sampleData, isSelected, onReord
   if (widget.type === 'dispatch') return <Dispatch w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} />
   if (widget.type === 'products') return <Products d={d} v={v} />
   if (widget.type === 'footer')   return <Footer   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} />
+  if (widget.type === 'summary')  return <Summary  widget={widget} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} />
   if (widget.type === 'divider')  return <div className="w-divider"><hr style={{ borderTop: `1px ${d.style} ${d.color}` }} /></div>
   if (widget.type === 'text')     return <div className="w-text" style={{ fontSize: d.fontSize, fontFamily: d.fontFamily || undefined, fontWeight: d.fontWeight || undefined, fontStyle: d.fontStyle || undefined, color: d.color || undefined, textAlign: d.textAlign || undefined }}>{d.content}</div>
   return null
