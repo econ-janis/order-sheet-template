@@ -288,8 +288,14 @@ function Dispatch({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sam
 /* ── Products (rigid) ── */
 function Products({ d, v }) {
   const colSpan = 1 + (d.showSubst ? 1 : 0) + (d.showPrice ? 1 : 0) + (d.showOrigQty ? 1 : 0)
+  const tb = d.tableBorder || {}
+  const tableStyle = tb.visible ? {
+    border: `${tb.width || 1}px ${tb.style || 'solid'} ${tb.color || '#cccccc'}`,
+    borderRadius: tb.rounded !== false ? (tb.radius ?? 5) : 0,
+    overflow: 'hidden',
+  } : {}
   return (
-    <div className="w-products">
+    <div className="w-products" style={tableStyle}>
       <table>
         <thead>
           <tr>

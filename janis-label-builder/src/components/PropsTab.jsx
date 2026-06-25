@@ -364,6 +364,43 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
         })}
       </div>
 
+      {/* 3b. Borde del widget products */}
+      {selWidget.type === 'products' && (() => {
+        const tb = selWidget.data.tableBorder || {}
+        const upd = (k, val) => onUpdateProp(selWidget.id, 'tableBorder', { ...selWidget.data.tableBorder, [k]: val })
+        return (
+          <div className="pgroup">
+            <div className="pgt">Borde del widget</div>
+            <div className="prow prow-inline">
+              <label>Visible</label>
+              <input type="checkbox" checked={!!tb.visible} onChange={e => upd('visible', e.target.checked)} />
+            </div>
+            {tb.visible && (<>
+              <div className="prow">
+                <label>Color</label>
+                <input key={`tb_color_${tb.visible}`} type="color" defaultValue={tb.color || '#cccccc'} style={{ height: 28, padding: '2px 4px', width: '100%' }} onChange={e => upd('color', e.target.value)} />
+              </div>
+              <div className="prow">
+                <label>Tipo</label>
+                <select key={`tb_style_${tb.visible}`} defaultValue={tb.style || 'solid'} onChange={e => upd('style', e.target.value)}>
+                  <option value="solid">Continua</option>
+                  <option value="dashed">Guión</option>
+                  <option value="dotted">Punteada</option>
+                </select>
+              </div>
+              <div className="prow">
+                <label>Grosor (px)</label>
+                <input key={`tb_width_${tb.visible}`} type="number" defaultValue={tb.width || 1} min={1} max={5} onInput={e => upd('width', +e.target.value)} />
+              </div>
+              <div className="prow">
+                <label>Esquinas (px)</label>
+                <input key={`tb_radius_${tb.visible}`} type="number" defaultValue={tb.radius ?? 5} min={0} max={24} title="0 = cuadradas, mayor = redondeadas" onInput={e => upd('radius', +e.target.value)} />
+              </div>
+            </>)}
+          </div>
+        )
+      })()}
+
       {/* 4. Agregar campo */}
       {hasColumns && (
         <button

@@ -213,8 +213,13 @@ export function genHbs(w) {
     }, 'w-dispatch w-cols', `background:${bg};border-top:2px solid ${ac};border-bottom:2px solid ${ac}`)
   }
 
-  if (w.type === 'products') return (
-    `<table class="w-products">\n  <thead><tr>\n` +
+  if (w.type === 'products') {
+    const tb = d.tableBorder || {}
+    const borderStyle = tb.visible
+      ? `border:${tb.width || 1}px ${tb.style || 'solid'} ${tb.color || '#cccccc'};border-radius:${tb.rounded !== false ? (tb.radius ?? 5) : 0}px;overflow:hidden;`
+      : ''
+    return (
+    `<div class="w-products"${borderStyle ? ` style="${borderStyle}"` : ''}>\n<table>\n  <thead><tr>\n` +
     `    <th>Descripción</th>\n` +
     (d.showSubst ? '    <th>Sust.</th>\n' : '') +
     (d.showPrice ? '    <th>Precio</th>\n' : '') +
@@ -225,8 +230,8 @@ export function genHbs(w) {
     (d.showPrice ? `      <td>{{currency purchasedPrice locale="${d.locale}" currencyCode="${d.currency}"}}</td>\n` : '') +
     (d.showOrigQty ? '      <td>{{purchasedQuantity}}</td>\n' : '') +
     (d.showFinalQty ? '      <td>{{pickingResult.[0].totalQuantity}}</td>\n' : '') +
-    `    </tr>\n  {{/each}}\n    <tr class="total">\n      <td>Total enviados</td>\n      <td>{{sumArray order.items "purchasedQuantity"}}</td>\n    </tr>\n  </tbody>\n</table>`
-  )
+    `    </tr>\n  {{/each}}\n    <tr class="total">\n      <td>Total enviados</td>\n      <td>{{sumArray order.items "purchasedQuantity"}}</td>\n    </tr>\n  </tbody>\n</table>\n</div>`
+  )}
 
   if (w.type === 'footer') {
     const bg = d.dark ? '#1a1a1a' : '#f8f8f8'
