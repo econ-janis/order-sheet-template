@@ -130,27 +130,17 @@
 .cwrap-move-handle:active { cursor: grabbing; }
 .cwrap-dragging { opacity: .4; }
 
-/* Side zones: full-height left/right strips during drag — drop to place a widget beside this one */
-.side-zone {
-  position: absolute; top: 0; height: 100%; width: 38%;
-  z-index: 14; pointer-events: auto;
-  display: flex; align-items: center; justify-content: center;
-  transition: background .1s; border: 2px dashed transparent;
+/* Beside-drop indicator: a glowing edge bar showing where the widget will land.
+   pointer-events:none is essential — it must never intercept drag hit-testing. */
+.split-indicator {
+  position: absolute; top: 4px; bottom: 4px; width: 5px;
+  background: #4a6cf7; border-radius: 3px; z-index: 15;
+  pointer-events: none; box-shadow: 0 0 8px rgba(74, 108, 247, .6);
 }
-.side-zone-left  { left: 0;  border-radius: 6px 0 0 6px; }
-.side-zone-right { right: 0; border-radius: 0 6px 6px 0; }
-.side-zone-hint {
-  opacity: 0; color: #4a6cf7; font-size: 16px;
-  background: rgba(255,255,255,.9); border-radius: 50%;
-  width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
-}
-.side-zone-left .side-zone-hint i { transform: rotate(0deg); }
-.side-zone-right .side-zone-hint i { transform: rotate(180deg); }
-.side-zone.sz-hot {
-  background: rgba(74, 108, 247, 0.16);
-  border-color: #4a6cf7;
-}
-.side-zone.sz-hot .side-zone-hint { opacity: 1; }
+.split-indicator-left  { left: -3px; }
+.split-indicator-right { right: -3px; }
+.cwrap-split-left,
+.cwrap-split-right { outline: 1.5px dashed rgba(74, 108, 247, .5); outline-offset: 1px; }
 
 /* Drag ghost following the cursor */
 .drag-ghost {

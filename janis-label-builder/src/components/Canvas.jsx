@@ -138,30 +138,39 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
     function onMove(ev) {
       setGhost({ x: ev.clientX, y: ev.clientY, label })
       const el = document.elementFromPoint(ev.clientX, ev.clientY)
-      const zoneEl = el?.closest('[data-split-zone]')
-      const splitZoneId = zoneEl?.getAttribute('data-split-zone')
-      const splitSide = zoneEl?.getAttribute('data-split-side') || 'right'
-      if (splitZoneId && splitZoneId !== id) {
-        setSplitKey(`${splitZoneId}:${splitSide}`)
-        dragStateRef.current.splitTarget = splitZoneId
-        dragStateRef.current.splitSide = splitSide
-        dragStateRef.current.afterIndex = null
-        setHotKey(null)
-        return
-      }
-      setSplitKey(null)
-      dragStateRef.current.splitTarget = null
+
+      // 1. Explicit drop zones (insertion bars + leftover-space slots) win.
       const zone = el?.closest('.dropzone')
       if (zone) {
+        setSplitKey(null)
+        dragStateRef.current.splitTarget = null
         setHotKey(zone.getAttribute('data-zone-key'))
         dragStateRef.current.afterIndex = parseInt(zone.getAttribute('data-after-index'), 10)
         const fs = zone.getAttribute('data-fit-span')
         dragStateRef.current.fitSpan = fs ? parseInt(fs, 10) : null
-      } else {
-        setHotKey(null)
-        dragStateRef.current.afterIndex = null
-        dragStateRef.current.fitSpan = null
+        return
       }
+
+      // 2. Hovering another widget → drop beside it (left/right half of its box).
+      const cw = el?.closest('[data-cwrap-id]')
+      const cwId = cw?.getAttribute('data-cwrap-id')
+      if (cw && cwId && cwId !== id) {
+        const rect = cw.getBoundingClientRect()
+        const side = (ev.clientX - rect.left) < rect.width / 2 ? 'left' : 'right'
+        setSplitKey(`${cwId}:${side}`)
+        dragStateRef.current.splitTarget = cwId
+        dragStateRef.current.splitSide = side
+        dragStateRef.current.afterIndex = null
+        setHotKey(null)
+        return
+      }
+
+      // 3. Nothing actionable under the cursor.
+      setSplitKey(null)
+      setHotKey(null)
+      dragStateRef.current.splitTarget = null
+      dragStateRef.current.afterIndex = null
+      dragStateRef.current.fitSpan = null
     }
     function onUp() {
       document.removeEventListener('mousemove', onMove)
@@ -244,12 +253,30 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                   {widgets.map((w, i) => (
                     <Fragment key={w.id}>
                       <div
-                        className={`cwrap${selId === w.id ? ' sel-ring' : ''}${dragId === w.id ? ' cwrap-dragging' : ''}`}
+                        data-cwrap-id={w.id}
+                        className={`cwrap${selId === w.id ? ' sel-ring' : ''}${dragId === w.id ? ' cwrap-dragging' : ''}${splitKey === `${w.id}:left` ? ' cwrap-split-left' : ''}${splitKey === `${w.id}:right` ? ' cwrap-split-right' : ''}`}
                         style={{
                           gridColumn: `span ${w.data.colSpan ?? 4}`,
                           minHeight: w.data.height ? w.data.height + 'px' : undefined,
                         }}
                         onClick={e => { e.stopPropagation(); onSelect(w.id) }}
+                        onDragOver={e => {
+                          if (!dragTypeRef.current || dragId) return
+                          e.preventDefault(); e.stopPropagation()
+                          const rect = e.currentTarget.getBoundingClientRect()
+                          const side = (e.clientX - rect.left) < rect.width / 2 ? 'left' : 'right'
+                          setSplitKey(`${w.id}:${side}`)
+                        }}
+                        onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setSplitKey(null) }}
+                        onDrop={e => {
+                          if (!dragTypeRef.current || dragId) return
+                          e.preventDefault(); e.stopPropagation()
+                          const rect = e.currentTarget.getBoundingClientRect()
+                          const side = (e.clientX - rect.left) < rect.width / 2 ? 'left' : 'right'
+                          onAddBeside(w.id, dragTypeRef.current, side)
+                          dragTypeRef.current = null
+                          setSplitKey(null); setNativeDrag(false)
+                        }}
                       >
                         <div
                           className="cwrap-move-handle"
@@ -261,26 +288,10 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                         </div>
 
                         <WidgetRenderer widget={w} sampleData={sampleData} isSelected={selId === w.id} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
-                        {(dragActive && dragId !== w.id) && ['left', 'right'].map(side => (
-                          <div
-                            key={side}
-                            className={`side-zone side-zone-${side}${splitKey === `${w.id}:${side}` ? ' sz-hot' : ''}`}
-                            data-split-zone={w.id}
-                            data-split-side={side}
-                            onDragOver={e => { if (dragTypeRef.current) { e.preventDefault(); e.stopPropagation(); setSplitKey(`${w.id}:${side}`) } }}
-                            onDragLeave={() => setSplitKey(null)}
-                            onDrop={e => {
-                              if (dragTypeRef.current) {
-                                e.preventDefault(); e.stopPropagation()
-                                onAddBeside(w.id, dragTypeRef.current, side)
-                                dragTypeRef.current = null
-                                setSplitKey(null); setNativeDrag(false)
-                              }
-                            }}
-                          >
-                            <span className="side-zone-hint"><i className="ti ti-arrow-bar-to-left" /></span>
-                          </div>
-                        ))}
+                        {/* Beside-drop indicator: pointer-events:none so it never steals hit-testing */}
+                        {(splitKey === `${w.id}:left` || splitKey === `${w.id}:right`) && (
+                          <div className={`split-indicator split-indicator-${splitKey === `${w.id}:left` ? 'left' : 'right'}`} />
+                        )}
                         <div className="wov">
                           {i > 0 && (
                             <button className="wob wob-mv" title="Subir" onClick={e => { e.stopPropagation(); onMove(w.id, -1) }}>
