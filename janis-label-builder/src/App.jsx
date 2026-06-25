@@ -81,7 +81,7 @@ export default function App() {
     )
   }
 
-  function splitWidgets(targetId, draggedId) {
+  function splitWidgets(targetId, draggedId, side = 'right') {
     setWidgets(prev => {
       const arr = [...prev]
       const fromIdx = arr.findIndex(w => w.id === draggedId)
@@ -90,12 +90,13 @@ export default function App() {
       const [dragged] = arr.splice(fromIdx, 1)
       const newToIdx = arr.findIndex(w => w.id === targetId)
       arr[newToIdx] = { ...arr[newToIdx], data: { ...arr[newToIdx].data, colSpan: 2 } }
-      arr.splice(newToIdx + 1, 0, { ...dragged, data: { ...dragged.data, colSpan: 2 } })
+      const insertAt = side === 'left' ? newToIdx : newToIdx + 1
+      arr.splice(insertAt, 0, { ...dragged, data: { ...dragged.data, colSpan: 2 } })
       return arr
     })
   }
 
-  function addBeside(targetId, type) {
+  function addBeside(targetId, type, side = 'right') {
     const w = { id: uid(), type, data: JSON.parse(JSON.stringify(WDEF[type])) }
     w.data.colSpan = 2
     setWidgets(prev => {
@@ -103,7 +104,7 @@ export default function App() {
       const i = arr.findIndex(x => x.id === targetId)
       if (i === -1) return [...prev, w]
       arr[i] = { ...arr[i], data: { ...arr[i].data, colSpan: 2 } }
-      arr.splice(i + 1, 0, w)
+      arr.splice(side === 'left' ? i : i + 1, 0, w)
       return arr
     })
     setSelId(w.id)

@@ -51,9 +51,10 @@ function DropZone({ dragTypeRef, onAdd, afterIndex = -1, colSpan = 4, fitSpan = 
   )
 }
 
-/* Resize handle */
-function ResizeHandle({ widget, canvasRef, onResize }) {
+/* Resize handle — corner is 'se' (bottom-right) or 'sw' (bottom-left) */
+function ResizeHandle({ widget, canvasRef, onResize, corner = 'se' }) {
   const startRef = useRef(null)
+  const dir = corner === 'sw' ? -1 : 1   // which way widening the column count goes
   function onMouseDown(e) {
     e.preventDefault(); e.stopPropagation()
     const canvasWidth = canvasRef.current?.offsetWidth || 480
@@ -65,7 +66,7 @@ function ResizeHandle({ widget, canvasRef, onResize }) {
     }
     function onMove(e) {
       const { startX, startY, initColSpan, initHeight, colWidth } = startRef.current
-      const newColSpan = Math.max(1, Math.min(4, Math.round(initColSpan + (e.clientX - startX) / colWidth)))
+      const newColSpan = Math.max(1, Math.min(4, Math.round(initColSpan + dir * (e.clientX - startX) / colWidth)))
       const newHeight = Math.max(20, Math.round(initHeight + (e.clientY - startY)))
       onResize(widget.id, newColSpan, newHeight)
     }
@@ -78,8 +79,8 @@ function ResizeHandle({ widget, canvasRef, onResize }) {
     document.addEventListener('mouseup', onUp)
   }
   return (
-    <div className="resize-handle" onMouseDown={onMouseDown} onClick={e => e.stopPropagation()} title="Redimensionar">
-      <i className="ti ti-arrows-diagonal" style={{ fontSize: 9, pointerEvents: 'none' }} />
+    <div className={`resize-handle rh-${corner}`} onMouseDown={onMouseDown} onClick={e => e.stopPropagation()} title="Redimensionar">
+      <i className={`ti ${corner === 'sw' ? 'ti-arrows-diagonal-2' : 'ti-arrows-diagonal'}`} style={{ fontSize: 9, pointerEvents: 'none' }} />
     </div>
   )
 }
@@ -137,10 +138,13 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
     function onMove(ev) {
       setGhost({ x: ev.clientX, y: ev.clientY, label })
       const el = document.elementFromPoint(ev.clientX, ev.clientY)
-      const splitZoneId = el?.getAttribute('data-split-zone') || el?.closest('[data-split-zone]')?.getAttribute('data-split-zone')
+      const zoneEl = el?.closest('[data-split-zone]')
+      const splitZoneId = zoneEl?.getAttribute('data-split-zone')
+      const splitSide = zoneEl?.getAttribute('data-split-side') || 'right'
       if (splitZoneId && splitZoneId !== id) {
-        setSplitKey(splitZoneId)
+        setSplitKey(`${splitZoneId}:${splitSide}`)
         dragStateRef.current.splitTarget = splitZoneId
+        dragStateRef.current.splitSide = splitSide
         dragStateRef.current.afterIndex = null
         setHotKey(null)
         return
@@ -164,8 +168,8 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
       document.removeEventListener('mouseup', onUp)
       document.body.style.userSelect = ''
       document.body.style.cursor = ''
-      const { id, afterIndex, splitTarget, fitSpan } = dragStateRef.current || {}
-      if (splitTarget) onSplit(splitTarget, id)
+      const { id, afterIndex, splitTarget, splitSide, fitSpan } = dragStateRef.current || {}
+      if (splitTarget) onSplit(splitTarget, id, splitSide)
       else if (afterIndex !== null && afterIndex !== undefined) onMoveTo(id, afterIndex, fitSpan)
       dragStateRef.current = null
       setDragId(null); setGhost(null); setHotKey(null); setSplitKey(null)
@@ -257,22 +261,26 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                         </div>
 
                         <WidgetRenderer widget={w} sampleData={sampleData} isSelected={selId === w.id} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
-                        {((dragActive && dragId !== w.id) || nativeDrag) && (
+                        {((dragActive && dragId !== w.id) || nativeDrag) && ['left', 'right'].map(side => (
                           <div
-                            className={`split-zone${splitKey === w.id ? ' sz-hot' : ''}`}
+                            key={side}
+                            className={`side-zone side-zone-${side}${splitKey === `${w.id}:${side}` ? ' sz-hot' : ''}`}
                             data-split-zone={w.id}
-                            onDragOver={e => { if (dragTypeRef.current) { e.preventDefault(); e.stopPropagation(); setSplitKey(w.id) } }}
+                            data-split-side={side}
+                            onDragOver={e => { if (dragTypeRef.current) { e.preventDefault(); e.stopPropagation(); setSplitKey(`${w.id}:${side}`) } }}
                             onDragLeave={() => setSplitKey(null)}
                             onDrop={e => {
                               if (dragTypeRef.current) {
                                 e.preventDefault(); e.stopPropagation()
-                                onAddBeside(w.id, dragTypeRef.current)
+                                onAddBeside(w.id, dragTypeRef.current, side)
                                 dragTypeRef.current = null
                                 setSplitKey(null); setNativeDrag(false)
                               }
                             }}
-                          />
-                        )}
+                          >
+                            <span className="side-zone-hint"><i className="ti ti-arrow-bar-to-left" /></span>
+                          </div>
+                        ))}
                         <div className="wov">
                           {i > 0 && (
                             <button className="wob wob-mv" title="Subir" onClick={e => { e.stopPropagation(); onMove(w.id, -1) }}>
@@ -288,7 +296,8 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                             <i className="ti ti-x" aria-hidden="true" />
                           </button>
                         </div>
-                        <ResizeHandle widget={w} canvasRef={canvasRef} onResize={onResize} />
+                        <ResizeHandle widget={w} canvasRef={canvasRef} onResize={onResize} corner="se" />
+                        <ResizeHandle widget={w} canvasRef={canvasRef} onResize={onResize} corner="sw" />
                       </div>
 
                       {/* leftover-space slot in the same row (palette + horizontal placement) */}
