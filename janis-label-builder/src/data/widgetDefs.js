@@ -66,7 +66,7 @@ export const WIDGET_TYPES = [
 
 export const WDEF = {
   header:   { showOrderNum: true, showDate: true, showControl: true, colCount: 3, columns: { c0: [], c1: [], c2: ['date', 'control', 'orderNum'] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {}, columnStyles: {} },
-  logo:     { imageUrl: '', objectFit: 'contain', bw: false, height: 80, colSpan: 4 },
+  logo:     { imageUrl: '', objectFit: 'contain', bw: false, height: 100, colSpan: 1 },
   client:   { showName: true, showCI: true, showPhone: true, showAddress: true, showPayment: true, colCount: 3, columns: { c0: ['name', 'ci', 'phone'], c1: ['address', 'payment'], c2: [] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {}, columnStyles: {} },
   dispatch: { showLogistic: true, showType: true, showDate: true, showAddress: true, bgColor: '#f0f4ff', accentColor: '#4a6cf7', colCount: 3, columns: { c0: ['logistic', 'type'], c1: ['date', 'address'], c2: [] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {}, columnStyles: {} },
   products: { showSubst: true, showPrice: true, showOrigQty: true, showFinalQty: true, locale: 'es-AR', currency: 'ARS', height: null, colSpan: 4 },
