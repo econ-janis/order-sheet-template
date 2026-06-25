@@ -419,6 +419,7 @@ function Summary({ widget, isSelected, onReorder, selFieldKey, onFieldSelect, sa
         colKeys={colKeys}
         onColumnsChange={next => onReorder(widget.id, 'columns', next)}
         wrapClass="w-summary-reorder"
+        wrapStyle={{ padding: '8px 0' }}
         renderField={makeRenderField(d, v, SUMMARY_FIELDS, sampleData)}
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
@@ -434,6 +435,7 @@ function Summary({ widget, isSelected, onReorder, selFieldKey, onFieldSelect, sa
       colKeys={colKeys}
       renderCell={makeDisplayCell(d, v, SUMMARY_FIELDS, sampleData)}
       wrapClass="w-summary-cols"
+      wrapStyle={{ padding: '8px 0' }}
       columnStyles={d.columnStyles}
     />
   )

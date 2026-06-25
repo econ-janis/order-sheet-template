@@ -266,7 +266,7 @@ export function genHbs(w) {
       ci: 'C.I.', phone: 'Teléfono', address: 'Dirección', logistic: 'Logística',
       deliveryType: 'Tipo envío', deliveryDate: 'Fecha entrega', payment: 'Forma de pago',
       itemCount: 'Cant. ítems', storeName: 'Tienda', storePhone: 'Tel. tienda',
-    }, 'w-summary w-cols', '')
+    }, 'w-summary w-cols', 'padding:8px 0')
   }
 
   if (w.type === 'logo') return (
