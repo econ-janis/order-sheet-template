@@ -2,6 +2,101 @@ import { useRef, useState, useEffect, Fragment } from 'react'
 import WidgetRenderer from './WidgetRenderer'
 import { genHbs, esc } from '../utils/helpers'
 
+const LS_KEY = 'janis_lb_layouts'
+
+function loadSaved() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]') } catch { return [] }
+}
+function persistSaved(list) {
+  localStorage.setItem(LS_KEY, JSON.stringify(list))
+}
+
+function SavedModal({ onClose, getCurrentWidgets, onLoadLayout }) {
+  const [saved, setSaved] = useState(loadSaved)
+  const [name, setName] = useState('')
+
+  function save() {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    const widgets = getCurrentWidgets()
+    if (!widgets.length) { alert('El canvas está vacío.'); return }
+    const list = loadSaved()
+    const existing = list.findIndex(e => e.name === trimmed)
+    const entry = { name: trimmed, savedAt: new Date().toISOString(), widgets }
+    if (existing >= 0) list[existing] = entry
+    else list.unshift(entry)
+    persistSaved(list)
+    setSaved(list)
+    setName('')
+  }
+
+  function load(entry) {
+    if (window.confirm(`¿Cargar "${entry.name}"? Se reemplazará el canvas actual.`)) {
+      onLoadLayout(entry.widgets)
+      onClose()
+    }
+  }
+
+  function remove(entryName) {
+    const list = loadSaved().filter(e => e.name !== entryName)
+    persistSaved(list)
+    setSaved(list)
+  }
+
+  function fmtDate(iso) {
+    try {
+      const d = new Date(iso)
+      return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+    } catch { return iso }
+  }
+
+  return (
+    <div className="preview-overlay" onClick={onClose}>
+      <div className="tpl-modal" style={{ maxWidth: 520 }} onClick={e => e.stopPropagation()}>
+        <div className="preview-bar">
+          <span><i className="ti ti-device-floppy" style={{ fontSize: 13 }} /> Guardados</span>
+          <button className="tbtn" onClick={onClose}><i className="ti ti-x" style={{ fontSize: 12 }} /> Cerrar</button>
+        </div>
+        <div style={{ padding: '14px 16px', borderBottom: '0.5px solid #e8eaf0', display: 'flex', gap: 7, alignItems: 'center' }}>
+          <input
+            className="hbs-ac-input"
+            style={{ flex: 1, fontFamily: 'inherit' }}
+            placeholder="Nombre del diseño…"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && save()}
+          />
+          <button className="tbtn pri" onClick={save}><i className="ti ti-device-floppy" style={{ fontSize: 11 }} /> Guardar</button>
+        </div>
+        <div style={{ overflowY: 'auto', maxHeight: 360, padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {saved.length === 0 && (
+            <div style={{ textAlign: 'center', color: '#bbb', fontSize: 11, padding: 32 }}>
+              <i className="ti ti-archive" style={{ fontSize: 24, display: 'block', marginBottom: 8 }} />
+              No hay diseños guardados
+            </div>
+          )}
+          {saved.map(entry => (
+            <div key={entry.name} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f8f9fb', borderRadius: 7, padding: '8px 12px', border: '0.5px solid #e8eaf0' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 12, color: '#1a1d2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.name}</div>
+                <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2 }}>
+                  {fmtDate(entry.savedAt)} · {entry.widgets.length} widget{entry.widgets.length !== 1 ? 's' : ''}
+                </div>
+              </div>
+              <button className="tbtn" style={{ fontSize: 10 }} onClick={() => load(entry)}>
+                <i className="ti ti-upload" style={{ fontSize: 10 }} /> Cargar
+              </button>
+              <button className="tbtn" style={{ fontSize: 10, color: '#e05', borderColor: '#fca5a5' }} onClick={() => remove(entry.name)}>
+                <i className="ti ti-trash" style={{ fontSize: 10 }} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Physical page sizes (mm) so the build canvas is true-to-paper and prints full width.
 const SIZE_MAP = {
   a4:    { w: '210mm', h: '297mm' },
@@ -85,16 +180,43 @@ function ResizeHandle({ widget, canvasRef, onResize, corner = 'se' }) {
   )
 }
 
+const EXPORT_CSS = `
+.label-container { font-family: Arial, Helvetica, sans-serif; font-size: 10px; color: #111; background: #fff; }
+.lcgrid { display: grid; grid-template-columns: repeat(4, 1fr); align-items: start; width: 100%; }
+.wcf label { display: block; color: #aaa; text-transform: uppercase; letter-spacing: .04em; font-size: 8px; margin-bottom: 1px; }
+.wcf span  { font-size: 10px; color: #111; }
+.wdi label { display: block; color: #888; text-transform: uppercase; letter-spacing: .04em; font-size: 8px; margin-bottom: 1px; }
+.wdi span  { font-size: 10px; font-weight: 500; color: #111; }
+.w-col { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+.w-cols { display: grid; gap: 14px; padding: 8px 14px; }
+.w-header { border-bottom: 1px solid #eee; padding: 10px 14px; }
+.w-client-cols { border-bottom: 1px solid #f2f2f2; }
+.w-dispatch-cols { border-bottom: 1px solid #e8e8e8; }
+.w-products { border-bottom: 1px solid #f0f0f0; }
+.w-products table { width: 100%; border-collapse: collapse; font-size: 9px; table-layout: fixed; }
+.w-products th { padding: 4px 8px; text-align: left; font-size: 8px; color: #888; text-transform: uppercase; border-bottom: 1px solid #e8e8e8; }
+.w-products td { padding: 4px 8px; border-bottom: 1px solid #f8f8f8; color: #222; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.w-products tr.total td { font-weight: 500; border-top: 1px solid #eee; }
+.w-footer { padding: 7px 14px; display: flex; align-items: center; justify-content: space-between; }
+.w-text { padding: 8px 14px; word-break: break-word; }
+.w-divider { padding: 3px 14px; }
+.w-divider hr { border: none; }
+.summary { padding: 8px 14px; }
+.summary-col { display: flex; flex-direction: column; gap: 4px; }
+`
+
 function exportHbs(widgets) {
   if (!widgets.length) { alert('Agregá al menos un widget.'); return }
   const body = widgets.map(w => '  ' + genHbs(w).replace(/\n/g, '\n  ')).join('\n\n')
-  const full =
-    `{{#if order}}\n<div class="label-container" id="pedido-{{root.order.commerceSequentialId}}">\n\n` +
+  const hbsContent =
+    `{{#if order}}\n<div class="label-container lcgrid" id="pedido-{{order.commerceSequentialId}}">\n\n` +
     body + `\n\n</div>\n{{/if}}`
-  const win = window.open('', '_blank', 'width=720,height=520')
+  const full = `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<style>\n${EXPORT_CSS}\n</style>\n</head>\n<body>\n${hbsContent}\n</body>\n</html>`
+  const win = window.open('', '_blank', 'width=800,height=600')
   win.document.write(
-    `<pre style="font-family:monospace;font-size:12px;padding:24px;white-space:pre-wrap;background:#1e1e1e;color:#d4d4d4;min-height:100vh">${esc(full)}</pre>`
+    `<pre style="font-family:monospace;font-size:12px;padding:24px;white-space:pre-wrap;background:#1e1e1e;color:#d4d4d4;min-height:100vh;margin:0">${esc(full)}</pre>`
   )
+  win.document.close()
 }
 
 // Simulates CSS-grid row packing (4 cols, no dense backfill) and reports, for
@@ -118,7 +240,7 @@ function buildRowSlots(widgets) {
   return result
 }
 
-export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onAddBeside, onDelete, onMove, onMoveTo, onSplit, onSelect, onClear, onTemplate, onReorder, onResize, selFieldKey, onFieldSelect, onRemoveField }) {
+export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onAddBeside, onDelete, onMove, onMoveTo, onSplit, onSelect, onClear, onTemplate, onReorder, onResize, selFieldKey, onFieldSelect, onRemoveField, onLoadLayout, getCurrentWidgets }) {
   const sizeRef = useRef(null)
   const canvasRef = useRef(null)
   const [dragId, setDragId] = useState(null)
@@ -126,8 +248,9 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
   const [hotKey, setHotKey] = useState(null)       // which drop zone is highlighted
   const [splitKey, setSplitKey] = useState(null)  // which widget's split zone is hot
   const [nativeDrag, setNativeDrag] = useState(false) // palette drag hovering the canvas
-  const [paper, setPaper] = useState('a4')         // current paper size key
+  const [paper, setPaper] = useState('a4')
   const [showPreview, setShowPreview] = useState(false)
+  const [showSaved, setShowSaved] = useState(false)
   const dragStateRef = useRef(null)
 
   function onSizeChange(e) {
@@ -220,6 +343,9 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
           </select>
         </div>
         <div style={{ display: 'flex', gap: 5 }}>
+          <button className="tbtn" onClick={() => setShowSaved(true)}>
+            <i className="ti ti-device-floppy" style={{ fontSize: 12 }} aria-hidden="true" /> Guardados
+          </button>
           <button className="tbtn tpl-trigger" onClick={onTemplate}>
             <i className="ti ti-layout-grid" style={{ fontSize: 12 }} aria-hidden="true" /> Plantillas
           </button>
@@ -348,6 +474,14 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
         <div className="drag-ghost" style={{ left: ghost.x + 12, top: ghost.y + 12 }}>
           <i className="ti ti-arrows-move" style={{ fontSize: 11 }} /> {ghost.label}
         </div>
+      )}
+
+      {showSaved && (
+        <SavedModal
+          onClose={() => setShowSaved(false)}
+          getCurrentWidgets={getCurrentWidgets}
+          onLoadLayout={onLoadLayout}
+        />
       )}
 
       {showPreview && (

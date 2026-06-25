@@ -123,6 +123,12 @@ export default function App() {
     setShowTemplateModal(true)
   }
 
+  function loadLayout(ws) {
+    const fresh = ws.map(w => ({ id: uid(), type: w.type, data: JSON.parse(JSON.stringify(w.data)) }))
+    setWidgets(fresh)
+    setSelId(null)
+  }
+
   function updateFieldStyle(widgetId, fieldKey, styleKey, val) {
     setWidgets(prev => prev.map(w => {
       if (w.id !== widgetId) return w
@@ -256,6 +262,8 @@ export default function App() {
         onSplit={splitWidgets}
         onAddBeside={addBeside}
         onTemplate={() => setShowTemplateModal(true)}
+        onLoadLayout={loadLayout}
+        getCurrentWidgets={() => widgets}
         selFieldKey={selFieldKey}
         onFieldSelect={setSelFieldKey}
         onRemoveField={removeField}

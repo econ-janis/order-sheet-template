@@ -124,7 +124,7 @@ export function resolveTemplate(str, sampleData) {
   if (!str) return str
   return str.replace(/\{\{([^}]+)\}\}/g, (m, expr) => {
     const v = resolveExpr(expr, sampleData)
-    return v == null || v === '' ? m : String(v)
+    return v == null ? '' : String(v)
   })
 }
 
