@@ -159,6 +159,14 @@ export function genHbs(w) {
     `  <p>${d.message}</p>\n</div>`
   )
   if (w.type === 'divider') return `<hr style="border-top: 1px ${d.style} ${d.color};">`
-  if (w.type === 'text') return `<div class="text-block" style="font-size:${d.fontSize}px;">\n  ${d.content}\n</div>`
+  if (w.type === 'text') {
+    const styles = [`font-size:${d.fontSize}px`]
+    if (d.fontFamily) styles.push(`font-family:${d.fontFamily}`)
+    if (d.fontWeight && d.fontWeight !== 'normal') styles.push(`font-weight:${d.fontWeight}`)
+    if (d.fontStyle && d.fontStyle !== 'normal') styles.push(`font-style:${d.fontStyle}`)
+    if (d.color && d.color !== '#111111') styles.push(`color:${d.color}`)
+    if (d.textAlign && d.textAlign !== 'left') styles.push(`text-align:${d.textAlign}`)
+    return `<div class="text-block" style="${styles.join(';')}">\n  ${d.content}\n</div>`
+  }
   return ''
 }

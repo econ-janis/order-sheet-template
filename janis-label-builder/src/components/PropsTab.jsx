@@ -290,9 +290,55 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
                   type="number"
                   defaultValue={v}
                   min={8}
-                  max={24}
+                  max={48}
                   onInput={e => onUpdateProp(selWidget.id, k, +e.target.value)}
                 />
+              </div>
+            )
+          }
+          if (k === 'fontFamily') {
+            return (
+              <div key={k} className="prow">
+                <label>{lbl}</label>
+                <select defaultValue={v} onChange={e => onUpdateProp(selWidget.id, k, e.target.value)}>
+                  {FONT_FAMILIES.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+                </select>
+              </div>
+            )
+          }
+          if (k === 'fontWeight') {
+            return (
+              <div key={k} className="prow prow-inline">
+                <label>{lbl}</label>
+                <input
+                  type="checkbox"
+                  defaultChecked={v === 'bold'}
+                  onChange={e => onUpdateProp(selWidget.id, k, e.target.checked ? 'bold' : 'normal')}
+                />
+              </div>
+            )
+          }
+          if (k === 'fontStyle') {
+            return (
+              <div key={k} className="prow prow-inline">
+                <label>{lbl}</label>
+                <input
+                  type="checkbox"
+                  defaultChecked={v === 'italic'}
+                  onChange={e => onUpdateProp(selWidget.id, k, e.target.checked ? 'italic' : 'normal')}
+                />
+              </div>
+            )
+          }
+          if (k === 'textAlign') {
+            return (
+              <div key={k} className="prow">
+                <label>{lbl}</label>
+                <select defaultValue={v} onChange={e => onUpdateProp(selWidget.id, k, e.target.value)}>
+                  <option value="left">Izquierda</option>
+                  <option value="center">Centro</option>
+                  <option value="right">Derecha</option>
+                </select>
               </div>
             )
           }

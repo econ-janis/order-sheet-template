@@ -379,6 +379,6 @@ export default function WidgetRenderer({ widget, sampleData, isSelected, onReord
   if (widget.type === 'products') return <Products d={d} v={v} />
   if (widget.type === 'footer')   return <Footer   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} />
   if (widget.type === 'divider')  return <div className="w-divider"><hr style={{ borderTop: `1px ${d.style} ${d.color}` }} /></div>
-  if (widget.type === 'text')     return <div className="w-text" style={{ fontSize: d.fontSize }}>{d.content}</div>
+  if (widget.type === 'text')     return <div className="w-text" style={{ fontSize: d.fontSize, fontFamily: d.fontFamily || undefined, fontWeight: d.fontWeight || undefined, fontStyle: d.fontStyle || undefined, color: d.color || undefined, textAlign: d.textAlign || undefined }}>{d.content}</div>
   return null
 }

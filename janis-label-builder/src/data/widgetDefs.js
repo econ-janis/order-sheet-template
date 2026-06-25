@@ -65,7 +65,7 @@ export const WDEF = {
   products: { showSubst: true, showPrice: true, showOrigQty: true, showFinalQty: true, locale: 'es-AR', currency: 'ARS', height: null, colSpan: 4 },
   footer:   { storeName: '', phone: '', website: '', message: 'Gracias por tu compra', dark: true, mode: 'columns', imageUrl: '', colCount: 3, columns: { c0: ['name', 'phone', 'web'], c1: ['msg'], c2: [] }, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },
   divider:  { style: 'solid', color: '#e8e8e8', height: null, colSpan: 4 },
-  text:     { content: 'Información importante del pedido', fontSize: 10, height: null, colSpan: 4 },
+  text:     { content: 'Información importante del pedido', fontSize: 10, fontFamily: '', fontWeight: 'normal', fontStyle: 'normal', color: '#111111', textAlign: 'left', height: null, colSpan: 4 },
 }
 
 export const PLABELS = {
@@ -100,6 +100,10 @@ export const PLABELS = {
   accentColor: 'Color acento',
   content: 'Contenido',
   fontSize: 'Tamaño fuente',
+  fontFamily: 'Fuente',
+  fontWeight: 'Negrita',
+  fontStyle: 'Cursiva',
+  textAlign: 'Alineación',
 }
 
 export const HBS_BY_TYPE = {
