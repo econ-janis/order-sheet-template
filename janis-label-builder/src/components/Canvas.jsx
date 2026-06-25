@@ -196,7 +196,7 @@ const EXPORT_CSS = `
 .w-products table { width: 100%; border-collapse: collapse; font-size: 9px; table-layout: fixed; }
 .w-products th { padding: 4px 8px; text-align: left; font-size: 8px; color: #888; text-transform: uppercase; border-bottom: 1px solid #e8e8e8; }
 .w-products td { padding: 4px 8px; border-bottom: 1px solid #f8f8f8; color: #222; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.w-products tr.total td { font-weight: 500; border-top: 1px solid #eee; }
+.w-products tr.total td { font-weight: 500; border-top: 1px solid #eee; background: #f5f5f5; color: #999; font-size: 8px; }
 .w-footer { padding: 7px 14px; display: flex; align-items: center; justify-content: space-between; }
 .w-text { padding: 8px 14px; word-break: break-word; }
 .w-divider { padding: 3px 14px; }

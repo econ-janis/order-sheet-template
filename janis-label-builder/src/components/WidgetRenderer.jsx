@@ -310,7 +310,7 @@ function Products({ d, v }) {
               {d.showFinalQty && <td>{it.pickingResult?.[0]?.totalQuantity ?? it.quantity ?? ''}</td>}
             </tr>
           ))}
-          <tr className="tot">
+          <tr className="tot" style={{background:'#f5f5f5',color:'#999',fontSize:'0.88em'}}>
             <td colSpan={colSpan}>Total enviados</td>
             {d.showFinalQty && <td>{v.total}</td>}
           </tr>
