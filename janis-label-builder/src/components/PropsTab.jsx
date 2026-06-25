@@ -84,7 +84,7 @@ function HbsAutocomplete({ hbsList, selWidget, sampleData, onAddHelper }) {
   )
 }
 
-export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdateFieldStyle, onUpdateCustomField, onAddCustomField, onUpdateColCount, onAddHelper, sampleData }) {
+export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdateFieldStyle, onUpdateCustomField, onUpdateCustomFieldLabel, onAddCustomField, onUpdateColCount, onAddHelper, sampleData }) {
   if (!selWidget) {
     return (
       <div className="parea">
@@ -154,17 +154,29 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
           <div className="pgt">Campo: {selFieldKey}</div>
 
           {isCustomField && (
-            <div className="prow">
-              <label>Contenido</label>
-              <textarea
-                key={selFieldKey}
-                defaultValue={selWidget.data.customFields?.[selFieldKey]?.content || ''}
-                data-field-key={selFieldKey}
-                rows={2}
-                style={{ fontSize: 11, padding: '4px 7px', borderRadius: 4, border: '0.5px solid var(--color-border-secondary)', background: 'var(--color-background-primary)', color: 'var(--color-text-primary)', width: '100%', resize: 'vertical' }}
-                onInput={e => onUpdateCustomField(selWidget.id, selFieldKey, e.target.value)}
-              />
-            </div>
+            <>
+              <div className="prow">
+                <label>Nombre</label>
+                <input
+                  key={selFieldKey + '_label'}
+                  type="text"
+                  defaultValue={selWidget.data.customFields?.[selFieldKey]?.label || ''}
+                  placeholder="Etiqueta del campo"
+                  onInput={e => onUpdateCustomFieldLabel(selWidget.id, selFieldKey, e.target.value)}
+                />
+              </div>
+              <div className="prow">
+                <label>Contenido</label>
+                <textarea
+                  key={selFieldKey}
+                  defaultValue={selWidget.data.customFields?.[selFieldKey]?.content || ''}
+                  data-field-key={selFieldKey}
+                  rows={2}
+                  style={{ fontSize: 11, padding: '4px 7px', borderRadius: 4, border: '0.5px solid var(--color-border-secondary)', background: 'var(--color-background-primary)', color: 'var(--color-text-primary)', width: '100%', resize: 'vertical' }}
+                  onInput={e => onUpdateCustomField(selWidget.id, selFieldKey, e.target.value)}
+                />
+              </div>
+            </>
           )}
 
           <div className="prow">

@@ -14,12 +14,25 @@ function customContent(d, k, sampleData) {
   return sampleData ? resolveTemplate(raw, sampleData) : raw
 }
 
+function customLabel(d, k) {
+  return d.customFields?.[k]?.label || ''
+}
+
 /* ── Field-level style helper (edit mode shows a placeholder for hidden fields) ── */
 function makeRenderField(d, v, builtinFields, sampleData) {
   return (k) => {
-    const el = k.startsWith('custom_')
-      ? <div className="w-custom-field">{customContent(d, k, sampleData) || 'Campo de texto'}</div>
-      : builtinFields[k]?.(d, v) || <span className="field-hidden">{k}</span>
+    if (k.startsWith('custom_')) {
+      const lbl = customLabel(d, k)
+      const val = customContent(d, k, sampleData) || 'Campo de texto'
+      const s = d.fieldStyles?.[k]
+      return (
+        <div className="w-custom-field">
+          {lbl && <label>{lbl}</label>}
+          {s ? <span style={s}>{val}</span> : <span>{val}</span>}
+        </div>
+      )
+    }
+    const el = builtinFields[k]?.(d, v) || <span className="field-hidden">{k}</span>
     const s = d.fieldStyles?.[k]
     return s ? <span style={s}>{el}</span> : el
   }
@@ -28,9 +41,19 @@ function makeRenderField(d, v, builtinFields, sampleData) {
 /* ── Display-mode cell: returns null for hidden fields, applies field styles ── */
 function makeDisplayCell(d, v, builtinFields, sampleData) {
   return (k) => {
-    let el
-    if (k.startsWith('custom_')) el = <div className="w-custom-field">{customContent(d, k, sampleData)}</div>
-    else el = builtinFields[k]?.(d, v)
+    if (k.startsWith('custom_')) {
+      const lbl = customLabel(d, k)
+      const val = customContent(d, k, sampleData)
+      if (!lbl && !val) return null
+      const s = d.fieldStyles?.[k]
+      return (
+        <div className="w-custom-field">
+          {lbl && <label>{lbl}</label>}
+          {s ? <span style={s}>{val}</span> : <span>{val}</span>}
+        </div>
+      )
+    }
+    const el = builtinFields[k]?.(d, v)
     if (!el) return null
     const s = d.fieldStyles?.[k]
     return s ? <span style={s}>{el}</span> : el

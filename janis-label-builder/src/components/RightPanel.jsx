@@ -8,7 +8,7 @@ const TABS = [
   { id: 'hbs',   label: 'HBS' },
 ]
 
-export default function RightPanel({ activeTab, setActiveTab, selWidget, sampleData, setSampleData, onUpdateProp, selFieldKey, onUpdateFieldStyle, onUpdateCustomField, onAddCustomField, onUpdateColCount, onAddHelper }) {
+export default function RightPanel({ activeTab, setActiveTab, selWidget, sampleData, setSampleData, onUpdateProp, selFieldKey, onUpdateFieldStyle, onUpdateCustomField, onUpdateCustomFieldLabel, onAddCustomField, onUpdateColCount, onAddHelper }) {
   return (
     <div className="panel panel-right">
       <div className="tab-row">
@@ -30,6 +30,7 @@ export default function RightPanel({ activeTab, setActiveTab, selWidget, sampleD
             onUpdateProp={onUpdateProp}
             onUpdateFieldStyle={onUpdateFieldStyle}
             onUpdateCustomField={onUpdateCustomField}
+            onUpdateCustomFieldLabel={onUpdateCustomFieldLabel}
             onAddCustomField={onAddCustomField}
             onUpdateColCount={onUpdateColCount}
             onAddHelper={onAddHelper}

@@ -135,7 +135,17 @@ export default function App() {
   function updateCustomField(widgetId, fieldKey, content) {
     setWidgets(prev => prev.map(w => {
       if (w.id !== widgetId) return w
-      const customFields = { ...(w.data.customFields || {}), [fieldKey]: { content } }
+      const prev_ = (w.data.customFields || {})[fieldKey] || {}
+      const customFields = { ...(w.data.customFields || {}), [fieldKey]: { ...prev_, content } }
+      return { ...w, data: { ...w.data, customFields } }
+    }))
+  }
+
+  function updateCustomFieldLabel(widgetId, fieldKey, label) {
+    setWidgets(prev => prev.map(w => {
+      if (w.id !== widgetId) return w
+      const prev_ = (w.data.customFields || {})[fieldKey] || {}
+      const customFields = { ...(w.data.customFields || {}), [fieldKey]: { ...prev_, label } }
       return { ...w, data: { ...w.data, customFields } }
     }))
   }
@@ -224,6 +234,7 @@ export default function App() {
         selFieldKey={selFieldKey}
         onUpdateFieldStyle={updateFieldStyle}
         onUpdateCustomField={updateCustomField}
+        onUpdateCustomFieldLabel={updateCustomFieldLabel}
         onAddCustomField={addCustomField}
         onUpdateColCount={updateColCount}
         onAddHelper={addHelper}
