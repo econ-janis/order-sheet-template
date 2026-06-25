@@ -244,6 +244,37 @@
 .prow input[type=checkbox] { width: 15px; height: 15px; }
 .prow-inline { flex-direction: row; align-items: center; justify-content: space-between; }
 .hbs-chips { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+
+/* ── Helpers autocomplete ── */
+.hbs-ac-wrap { position: relative; }
+.hbs-ac-input-row { display: flex; align-items: center; gap: 3px; }
+.hbs-ac-input {
+  flex: 1; font-size: 11px; font-family: var(--font-mono);
+  padding: 4px 7px; border-radius: 4px;
+  border: 0.5px solid var(--color-border-secondary);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  outline: none; min-width: 0;
+}
+.hbs-ac-input:focus { border-color: #4a6cf7; box-shadow: 0 0 0 2px rgba(74,108,247,.15); }
+.hbs-ac-clear {
+  background: none; border: none; cursor: pointer; padding: 2px 4px;
+  color: var(--color-text-secondary); display: flex; align-items: center;
+}
+.hbs-ac-dropdown {
+  position: absolute; top: calc(100% + 3px); left: 0; right: 0;
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-secondary);
+  border-radius: 5px; box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  z-index: 100; overflow: hidden; max-height: 220px; overflow-y: auto;
+}
+.hbs-ac-item {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 9px; font-size: 10px; font-family: var(--font-mono);
+  color: var(--color-text-primary); cursor: pointer;
+  transition: background .08s;
+}
+.hbs-ac-item:hover { background: var(--color-background-secondary); }
 .hbsc {
   font-size: 9px; padding: 2px 5px;
   background: var(--color-background-secondary);
