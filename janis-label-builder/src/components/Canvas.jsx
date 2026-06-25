@@ -11,7 +11,7 @@ const SIZE_MAP = {
 
 /* Drop zone: accepts native palette drags (onDrop) and is detected by pointer drags
    via data-after-index + elementFromPoint. */
-function DropZone({ dragTypeRef, onAdd, afterIndex = -1, colSpan = 4, zoneKey, variant, hot }) {
+function DropZone({ dragTypeRef, onAdd, afterIndex = -1, colSpan = 4, fitSpan = null, zoneKey, variant, hot }) {
   const ref = useRef(null)
   const [over, setOver] = useState(false)
 
@@ -19,7 +19,7 @@ function DropZone({ dragTypeRef, onAdd, afterIndex = -1, colSpan = 4, zoneKey, v
   function handleDragLeave(e) { if (!ref.current?.contains(e.relatedTarget)) setOver(false) }
   function handleDrop(e) {
     e.preventDefault(); e.stopPropagation(); setOver(false)
-    if (dragTypeRef.current) { onAdd(dragTypeRef.current, afterIndex); dragTypeRef.current = null }
+    if (dragTypeRef.current) { onAdd(dragTypeRef.current, afterIndex, fitSpan); dragTypeRef.current = null }
   }
 
   const cls = `dropzone dz-${variant}${over ? ' over' : ''}${hot ? ' dz-hot' : ''}`
@@ -33,6 +33,7 @@ function DropZone({ dragTypeRef, onAdd, afterIndex = -1, colSpan = 4, zoneKey, v
       className={cls}
       data-after-index={afterIndex}
       data-zone-key={zoneKey}
+      data-fit-span={fitSpan ?? ''}
       style={baseStyle}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -150,9 +151,12 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
       if (zone) {
         setHotKey(zone.getAttribute('data-zone-key'))
         dragStateRef.current.afterIndex = parseInt(zone.getAttribute('data-after-index'), 10)
+        const fs = zone.getAttribute('data-fit-span')
+        dragStateRef.current.fitSpan = fs ? parseInt(fs, 10) : null
       } else {
         setHotKey(null)
         dragStateRef.current.afterIndex = null
+        dragStateRef.current.fitSpan = null
       }
     }
     function onUp() {
@@ -160,9 +164,9 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
       document.removeEventListener('mouseup', onUp)
       document.body.style.userSelect = ''
       document.body.style.cursor = ''
-      const { id, afterIndex, splitTarget } = dragStateRef.current || {}
+      const { id, afterIndex, splitTarget, fitSpan } = dragStateRef.current || {}
       if (splitTarget) onSplit(splitTarget, id)
-      else if (afterIndex !== null && afterIndex !== undefined) onMoveTo(id, afterIndex)
+      else if (afterIndex !== null && afterIndex !== undefined) onMoveTo(id, afterIndex, fitSpan)
       dragStateRef.current = null
       setDragId(null); setGhost(null); setHotKey(null); setSplitKey(null)
     }
@@ -289,7 +293,7 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
 
                       {/* leftover-space slot in the same row (palette + horizontal placement) */}
                       {rowSlots[i] > 0 && (
-                        <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={i} colSpan={rowSlots[i]}
+                        <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={i} colSpan={rowSlots[i]} fitSpan={rowSlots[i]}
                           zoneKey={`slot-${i}`} variant="slot" hot={hotKey === `slot-${i}`} />
                       )}
 

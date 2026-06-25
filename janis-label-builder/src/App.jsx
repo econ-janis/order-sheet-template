@@ -19,8 +19,9 @@ export default function App() {
 
   useEffect(() => { setSelFieldKey(null) }, [selId])
 
-  function addWidget(type, afterIndex = -1) {
+  function addWidget(type, afterIndex = -1, fitSpan = null) {
     const w = { id: uid(), type, data: JSON.parse(JSON.stringify(WDEF[type])) }
+    if (fitSpan) w.data.colSpan = fitSpan
     setWidgets(prev => {
       if (afterIndex < 0 || afterIndex >= prev.length) return [...prev, w]
       const arr = [...prev]
@@ -45,12 +46,17 @@ export default function App() {
     })
   }
 
-  function moveWidgetTo(id, afterIndex) {
+  function moveWidgetTo(id, afterIndex, fitSpan = null) {
     setWidgets(prev => {
       const arr = [...prev]
       const fromIdx = arr.findIndex(w => w.id === id)
-      if (fromIdx === -1 || fromIdx === afterIndex) return arr
-      const [widget] = arr.splice(fromIdx, 1)
+      if (fromIdx === -1) return arr
+      if (fromIdx === afterIndex) {
+        if (fitSpan) arr[fromIdx] = { ...arr[fromIdx], data: { ...arr[fromIdx].data, colSpan: fitSpan } }
+        return arr
+      }
+      let [widget] = arr.splice(fromIdx, 1)
+      if (fitSpan) widget = { ...widget, data: { ...widget.data, colSpan: fitSpan } }
       const insertAt = afterIndex > fromIdx ? afterIndex : afterIndex + 1
       arr.splice(insertAt, 0, widget)
       return arr
