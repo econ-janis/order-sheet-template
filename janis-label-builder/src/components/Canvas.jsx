@@ -97,15 +97,23 @@ function exportHbs(widgets) {
   )
 }
 
+// Simulates CSS-grid row packing (4 cols, no dense backfill) and reports, for
+// each widget, the size of any REAL trailing gap in its row — i.e. empty cells
+// the next widget can't fill (so it wraps). Without the "next fits" check we'd
+// render phantom slots between widgets that actually sit side by side.
 function buildRowSlots(widgets) {
-  const result = []
+  const result = new Array(widgets.length).fill(0)
   let col = 0
-  for (const w of widgets) {
-    const span = w.data.colSpan ?? 4
+  for (let i = 0; i < widgets.length; i++) {
+    const span = Math.min(4, Math.max(1, widgets[i].data.colSpan ?? 4))
+    if (col + span > 4) col = 0          // doesn't fit current row → wraps
     col += span
-    const remainder = col % 4
-    if (remainder === 0) { result.push(0); col = 0 }
-    else { result.push(4 - remainder) }
+    const remaining = 4 - col
+    const next = widgets[i + 1]
+    const nextSpan = next ? Math.min(4, Math.max(1, next.data.colSpan ?? 4)) : null
+    const nextFits = nextSpan !== null && nextSpan <= remaining
+    if (remaining > 0 && !nextFits) result[i] = remaining
+    if (col >= 4) col = 0
   }
   return result
 }
