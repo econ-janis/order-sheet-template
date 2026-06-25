@@ -184,3 +184,33 @@ export const HBS_BY_TYPE = {
     '{{root.store.phone}}',
   ],
 }
+
+export const BUILTIN_FIELDS_BY_TYPE = {
+  header:   ['date', 'control', 'orderNum'],
+  client:   ['name', 'ci', 'phone', 'address', 'payment'],
+  dispatch: ['logistic', 'type', 'date', 'address'],
+  footer:   ['name', 'phone', 'web', 'msg'],
+  summary:  ['orderNum', 'date', 'total', 'clientName', 'ci', 'phone', 'address', 'logistic', 'deliveryType', 'deliveryDate', 'payment', 'itemCount', 'storeName', 'storePhone'],
+}
+
+export const FIELD_LABELS = {
+  date: 'Fecha',
+  control: 'N° control',
+  orderNum: 'N° factura',
+  name: 'Nombre',
+  ci: 'CI',
+  phone: 'Teléfono',
+  address: 'Dirección',
+  payment: 'Forma de pago',
+  logistic: 'Logística',
+  type: 'Tipo',
+  web: 'Sitio web',
+  msg: 'Mensaje',
+  total: 'Total',
+  clientName: 'Nombre y apellido',
+  deliveryType: 'Tipo envío',
+  deliveryDate: 'Fecha entrega',
+  itemCount: 'Cant. ítems',
+  storeName: 'Tienda',
+  storePhone: 'Tel. tienda',
+}

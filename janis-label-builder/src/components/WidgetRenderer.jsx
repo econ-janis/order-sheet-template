@@ -69,7 +69,8 @@ function ColumnDisplay({ columns, colKeys, renderCell, wrapClass, wrapStyle, col
     >
       {colKeys.map(col => {
         const cs = (columnStyles || {})[col]
-        const colStyle = cs?.border ? { border: `${cs.width || 1}px ${cs.style || 'dashed'} ${cs.color || '#cccccc'}`, borderRadius: 4, padding: '4px 6px' } : {}
+        const radius = cs?.border ? (cs.rounded !== false ? (cs.radius ?? 5) : 0) : 0
+        const colStyle = cs?.border ? { border: `${cs.width || 1}px ${cs.style || 'dashed'} ${cs.color || '#cccccc'}`, borderRadius: radius, padding: '4px 6px' } : {}
         return (
           <div key={col} className="w-col" style={colStyle}>
             {(columns[col] || []).map(k => { const el = renderCell(k); return el ? <div key={k}>{el}</div> : null })}
@@ -81,7 +82,7 @@ function ColumnDisplay({ columns, colKeys, renderCell, wrapClass, wrapStyle, col
 }
 
 /* ── N-column drag & drop layout ── */
-function ColumnDrop({ columns, colKeys = ['left', 'right'], onColumnsChange, renderField, wrapClass, wrapStyle, selFieldKey, onFieldSelect, columnStyles }) {
+function ColumnDrop({ columns, colKeys = ['left', 'right'], onColumnsChange, renderField, wrapClass, wrapStyle, selFieldKey, onFieldSelect, columnStyles, onRemoveField }) {
   const dragging = useRef(null)
   const [overSlot, setOverSlot] = useState(null)
 
@@ -147,6 +148,11 @@ function ColumnDrop({ columns, colKeys = ['left', 'right'], onColumnsChange, ren
               <div key={k} {...itemDrag(col, k)}>
                 <span className="drag-handle"><i className="ti ti-grip-vertical" /></span>
                 <div className="dlist-content">{renderField(k)}</div>
+                {onRemoveField && (
+                  <button className="field-remove-btn" title="Eliminar campo" onClick={e => { e.stopPropagation(); onRemoveField(k) }}>
+                    <i className="ti ti-x" />
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -157,7 +163,7 @@ function ColumnDrop({ columns, colKeys = ['left', 'right'], onColumnsChange, ren
 }
 
 /* ── Header ── */
-function Header({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampleData }) {
+function Header({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampleData, onRemoveField }) {
   const d = w.data
   const cols = d.columns || {}
   const colKeys = colKeysOf(d)
@@ -179,6 +185,7 @@ function Header({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampl
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
         columnStyles={d.columnStyles}
+        onRemoveField={onRemoveField}
       />
     )
   }
@@ -203,7 +210,7 @@ const CLIENT_FIELDS = {
   payment: (d, v) => d.showPayment && <div className="wcf"><label>Forma de pago</label><span>{v.payment}</span></div>,
 }
 
-function Client({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampleData }) {
+function Client({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampleData, onRemoveField }) {
   const d = w.data
   const cols = d.columns || {}
   const colKeys = colKeysOf(d)
@@ -219,6 +226,7 @@ function Client({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampl
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
         columnStyles={d.columnStyles}
+        onRemoveField={onRemoveField}
       />
     )
   }
@@ -242,7 +250,7 @@ const DISPATCH_FIELDS = {
   address:  (d, v) => d.showAddress  && <div className="wdi"><label>Dirección</label><span>{v.address}</span></div>,
 }
 
-function Dispatch({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampleData }) {
+function Dispatch({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampleData, onRemoveField }) {
   const d = w.data
   const cols = d.columns || {}
   const colKeys = colKeysOf(d)
@@ -260,6 +268,7 @@ function Dispatch({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sam
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
         columnStyles={d.columnStyles}
+        onRemoveField={onRemoveField}
       />
     )
   }
@@ -319,7 +328,7 @@ const FOOTER_FIELDS = {
   msg:   (d, v, c) => v.msg   && <div style={{ color: c.msg,  fontSize: 9 }}>{v.msg}</div>,
 }
 
-function Footer({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampleData }) {
+function Footer({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampleData, onRemoveField }) {
   const d = w.data
   const cols = d.columns || {}
   const colKeys = colKeysOf(d)
@@ -356,6 +365,7 @@ function Footer({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sampl
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
         columnStyles={d.columnStyles}
+        onRemoveField={onRemoveField}
       />
     )
   }
@@ -390,7 +400,7 @@ const SUMMARY_FIELDS = {
   storePhone:   (d, v) => <div className="wcf"><label>Tel. tienda</label><span>{v.storePhone}</span></div>,
 }
 
-function Summary({ widget, mode, isSelected, onReorder, selFieldKey, onFieldSelect, sampleData }) {
+function Summary({ widget, isSelected, onReorder, selFieldKey, onFieldSelect, sampleData, onRemoveField }) {
   const d = widget.data
   const v = resolveWidgetData(widget, sampleData || {})
   const cols = d.columns || {}
@@ -407,6 +417,7 @@ function Summary({ widget, mode, isSelected, onReorder, selFieldKey, onFieldSele
         selFieldKey={selFieldKey}
         onFieldSelect={onFieldSelect}
         columnStyles={d.columnStyles}
+        onRemoveField={onRemoveField}
       />
     )
   }
@@ -434,17 +445,17 @@ function Logo({ d }) {
 }
 
 /* ── Main export ── */
-export default function WidgetRenderer({ widget, sampleData, isSelected, onReorder, selFieldKey, onFieldSelect }) {
+export default function WidgetRenderer({ widget, sampleData, isSelected, onReorder, selFieldKey, onFieldSelect, onRemoveField }) {
   const d = widget.data
   const v = resolveWidgetData(widget, sampleData)
 
-  if (widget.type === 'header')   return <Header   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} />
+  if (widget.type === 'header')   return <Header   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} onRemoveField={onRemoveField} />
   if (widget.type === 'logo')     return <Logo d={d} />
-  if (widget.type === 'client')   return <Client   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} />
-  if (widget.type === 'dispatch') return <Dispatch w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} />
+  if (widget.type === 'client')   return <Client   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} onRemoveField={onRemoveField} />
+  if (widget.type === 'dispatch') return <Dispatch w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} onRemoveField={onRemoveField} />
   if (widget.type === 'products') return <Products d={d} v={v} />
-  if (widget.type === 'footer')   return <Footer   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} />
-  if (widget.type === 'summary')  return <Summary  widget={widget} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} />
+  if (widget.type === 'footer')   return <Footer   w={widget} v={v} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} onRemoveField={onRemoveField} />
+  if (widget.type === 'summary')  return <Summary  widget={widget} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} onRemoveField={onRemoveField} />
   if (widget.type === 'divider')  return <div className="w-divider"><hr style={{ borderTop: `1px ${d.style} ${d.color}` }} /></div>
   if (widget.type === 'text')     return <div className="w-text" style={{ fontSize: d.fontSize, fontFamily: d.fontFamily || undefined, fontWeight: d.fontWeight || undefined, fontStyle: d.fontStyle || undefined, color: d.color || undefined, textAlign: d.textAlign || undefined }}>{d.content}</div>
   return null

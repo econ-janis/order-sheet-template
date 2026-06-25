@@ -118,7 +118,7 @@ function buildRowSlots(widgets) {
   return result
 }
 
-export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onAddBeside, onDelete, onMove, onMoveTo, onSplit, onSelect, onClear, onTemplate, onReorder, onResize, selFieldKey, onFieldSelect }) {
+export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onAddBeside, onDelete, onMove, onMoveTo, onSplit, onSelect, onClear, onTemplate, onReorder, onResize, selFieldKey, onFieldSelect, onRemoveField }) {
   const sizeRef = useRef(null)
   const canvasRef = useRef(null)
   const [dragId, setDragId] = useState(null)
@@ -295,7 +295,7 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                           <i className="ti ti-arrows-move" style={{ fontSize: 11, pointerEvents: 'none' }} /> mover
                         </div>
 
-                        <WidgetRenderer widget={w} sampleData={sampleData} isSelected={selId === w.id} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} />
+                        <WidgetRenderer widget={w} sampleData={sampleData} isSelected={selId === w.id} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} onRemoveField={onRemoveField ? k => onRemoveField(w.id, k) : undefined} />
                         {/* Beside-drop indicator: pointer-events:none so it never steals hit-testing */}
                         {(splitKey === `${w.id}:left` || splitKey === `${w.id}:right`) && (
                           <div className={`split-indicator split-indicator-${splitKey === `${w.id}:left` ? 'left' : 'right'}`} />

@@ -191,6 +191,32 @@ export default function App() {
     }))
   }
 
+  function removeField(widgetId, fieldKey) {
+    setWidgets(prev => prev.map(w => {
+      if (w.id !== widgetId) return w
+      const columns = {}
+      Object.entries(w.data.columns || {}).forEach(([col, keys]) => { columns[col] = keys.filter(k => k !== fieldKey) })
+      if (fieldKey.startsWith('custom_')) {
+        const customFields = { ...(w.data.customFields || {}) }
+        delete customFields[fieldKey]
+        return { ...w, data: { ...w.data, columns, customFields } }
+      }
+      return { ...w, data: { ...w.data, columns } }
+    }))
+  }
+
+  function restoreField(widgetId, fieldKey) {
+    setWidgets(prev => prev.map(w => {
+      if (w.id !== widgetId) return w
+      const cols = w.data.columns || {}
+      const allKeys = Object.values(cols).flat()
+      if (allKeys.includes(fieldKey)) return w
+      const firstKey = Object.keys(cols)[0] || 'c0'
+      const columns = { ...cols, [firstKey]: [...(cols[firstKey] || []), fieldKey] }
+      return { ...w, data: { ...w.data, columns } }
+    }))
+  }
+
   function updateColCount(id, n) {
     setWidgets(prev => prev.map(w => {
       if (w.id !== id) return w
@@ -232,6 +258,7 @@ export default function App() {
         onTemplate={() => setShowTemplateModal(true)}
         selFieldKey={selFieldKey}
         onFieldSelect={setSelFieldKey}
+        onRemoveField={removeField}
       />
       <RightPanel
         activeTab={activeTab}
@@ -248,6 +275,7 @@ export default function App() {
         onUpdateColCount={updateColCount}
         onAddHelper={addHelper}
         onUpdateColumnStyle={updateColumnStyle}
+        onRestoreField={restoreField}
       />
     </div>
   )

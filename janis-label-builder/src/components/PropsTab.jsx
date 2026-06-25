@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { PLABELS, HBS_BY_TYPE } from '../data/widgetDefs'
+import { PLABELS, HBS_BY_TYPE, BUILTIN_FIELDS_BY_TYPE, FIELD_LABELS } from '../data/widgetDefs'
 import { resolveTemplate } from '../utils/helpers'
 
 const WIDGETS_WITH_COLUMNS = ['header', 'client', 'dispatch', 'footer', 'summary']
@@ -89,7 +89,7 @@ function HbsAutocomplete({ hbsList, selWidget, sampleData, onAddHelper }) {
   )
 }
 
-export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdateFieldStyle, onUpdateCustomField, onUpdateCustomFieldLabel, onAddCustomField, onUpdateColCount, onAddHelper, sampleData, onUpdateColumnStyle }) {
+export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdateFieldStyle, onUpdateCustomField, onUpdateCustomFieldLabel, onAddCustomField, onUpdateColCount, onAddHelper, sampleData, onUpdateColumnStyle, onRestoreField }) {
   if (!selWidget) {
     return (
       <div className="parea">
@@ -105,6 +105,10 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
   const fieldStyles = selWidget.data.fieldStyles?.[selFieldKey] || {}
   const isCustomField = selFieldKey?.startsWith('custom_')
   const hasColumns = WIDGETS_WITH_COLUMNS.includes(selWidget.type)
+
+  // Built-in fields currently absent from all columns (available to restore)
+  const allInColumns = Object.values(selWidget.data.columns || {}).flat()
+  const removedBuiltinFields = (BUILTIN_FIELDS_BY_TYPE[selWidget.type] || []).filter(k => !allInColumns.includes(k))
 
   return (
     <div className="parea" key={selWidget.id}>
@@ -401,10 +405,34 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
                     <label>Grosor (px)</label>
                     <input key={`${col}_width_${cs.border}`} type="number" defaultValue={cs.width || 1} min={1} max={5} onInput={e => onUpdateColumnStyle(selWidget.id, col, 'width', +e.target.value)} />
                   </div>
+                  <div className="prow">
+                    <label>Esquinas (px)</label>
+                    <input key={`${col}_radius_${cs.border}`} type="number" defaultValue={cs.radius ?? 5} min={0} max={24} title="0 = cuadradas, mayor = redondeadas" onInput={e => onUpdateColumnStyle(selWidget.id, col, 'radius', +e.target.value)} />
+                  </div>
                 </>)}
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* 4c. Campos eliminados (restore) */}
+      {hasColumns && removedBuiltinFields.length > 0 && (
+        <div className="pgroup">
+          <div className="pgt">Campos eliminados</div>
+          <div className="hbs-chips" style={{ marginTop: 4 }}>
+            {removedBuiltinFields.map(k => (
+              <span
+                key={k}
+                className="hbsc hbsc-restore"
+                title="Volver a agregar"
+                onClick={() => onRestoreField?.(selWidget.id, k)}
+              >
+                <i className="ti ti-plus" style={{ fontSize: 9 }} />
+                {FIELD_LABELS[k] || k}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
