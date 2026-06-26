@@ -286,5 +286,19 @@ export function genHbs(w) {
     if (d.textAlign && d.textAlign !== 'left') styles.push(`text-align:${d.textAlign}`)
     return `<div class="w-text" style="${styles.join(';')}">${d.content}</div>`
   }
+
+  if (w.type === 'html') return d.content || ''
+
+  if (w.type === 'barcode') {
+    const sz = d.size || 120
+    const val = esc(d.value || '')
+    return (
+      `<div class="w-barcode" style="padding:8px;display:flex;flex-direction:column;align-items:center;gap:4px">\n` +
+      `  <img src="https://api.qrserver.com/v1/create-qr-code/?size=${sz}x${sz}&data=${val}" width="${sz}" height="${sz}" alt="QR">\n` +
+      `  <span style="font-size:8px;color:#aaa;word-break:break-all;text-align:center;max-width:${sz}px">${val}</span>\n` +
+      `</div>`
+    )
+  }
+
   return ''
 }

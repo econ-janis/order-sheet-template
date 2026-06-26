@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
+import QRCode from 'qrcode'
 import { resolveWidgetData, fmtCurrency, resolveTemplate } from '../utils/helpers'
 
 /* Generic internal-column keys derived from the widget's colCount (default 3). */
@@ -452,6 +453,43 @@ function Logo({ d }) {
   )
 }
 
+/* ── HTML / JS ── */
+function HtmlWidget({ d }) {
+  return (
+    <div className="w-html">
+      <iframe
+        title="html-preview"
+        srcDoc={d.content || ''}
+        sandbox="allow-scripts allow-same-origin"
+        style={{ width: '100%', height: d.height ? d.height + 'px' : '120px', border: 'none', display: 'block' }}
+      />
+    </div>
+  )
+}
+
+/* ── Barcode / QR ── */
+function BarcodeWidget({ d, sampleData }) {
+  const [dataUrl, setDataUrl] = useState('')
+  const resolvedValue = resolveTemplate(d.value || '', sampleData) || d.value || ''
+
+  useEffect(() => {
+    if (!resolvedValue) return
+    QRCode.toDataURL(resolvedValue, { width: d.size || 120, margin: 1 })
+      .then(url => setDataUrl(url))
+      .catch(() => setDataUrl(''))
+  }, [resolvedValue, d.size])
+
+  return (
+    <div className="w-barcode" style={{ padding: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+      {dataUrl
+        ? <img src={dataUrl} alt="QR" style={{ width: d.size || 120, height: d.size || 120 }} />
+        : <div style={{ width: d.size || 120, height: d.size || 120, background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#aaa' }}>QR</div>
+      }
+      {resolvedValue && <span style={{ fontSize: 8, color: '#aaa', wordBreak: 'break-all', textAlign: 'center', maxWidth: d.size || 120 }}>{resolvedValue}</span>}
+    </div>
+  )
+}
+
 /* ── Main export ── */
 export default function WidgetRenderer({ widget, sampleData, isSelected, onReorder, selFieldKey, onFieldSelect, onRemoveField }) {
   const d = widget.data
@@ -466,5 +504,7 @@ export default function WidgetRenderer({ widget, sampleData, isSelected, onReord
   if (widget.type === 'summary')  return <Summary  widget={widget} isSelected={isSelected} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} sampleData={sampleData} onRemoveField={onRemoveField} />
   if (widget.type === 'divider')  return <div className="w-divider"><hr style={{ borderTop: `1px ${d.style} ${d.color}` }} /></div>
   if (widget.type === 'text')     return <div className="w-text" style={{ fontSize: d.fontSize, fontFamily: d.fontFamily || undefined, fontWeight: d.fontWeight || undefined, fontStyle: d.fontStyle || undefined, color: d.color || undefined, textAlign: d.textAlign || undefined }}>{d.content}</div>
+  if (widget.type === 'html')     return <HtmlWidget d={d} />
+  if (widget.type === 'barcode')  return <BarcodeWidget d={d} sampleData={sampleData} />
   return null
 }

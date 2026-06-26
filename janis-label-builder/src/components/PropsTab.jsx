@@ -236,6 +236,54 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
           if (Array.isArray(v) || (v !== null && typeof v === 'object')) return null
           if (k === 'height' || k === 'colSpan' || k === 'colCount') return null
           if (k === 'imageUrl' && selWidget.data.mode !== 'image' && selWidget.type !== 'logo') return null
+          // html widget: render large code textarea for content
+          if (k === 'content' && selWidget.type === 'html') {
+            return (
+              <div key={k} className="prow" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                <label style={{ marginBottom: 4 }}>Código HTML / JS</label>
+                <textarea
+                  key={selWidget.id + '_html'}
+                  defaultValue={String(v ?? '')}
+                  rows={10}
+                  spellCheck={false}
+                  style={{ fontSize: 10, fontFamily: 'monospace', padding: '4px 7px', borderRadius: 4, border: '0.5px solid var(--color-border-secondary)', background: 'var(--color-background-primary)', color: 'var(--color-text-primary)', width: '100%', resize: 'vertical' }}
+                  onInput={e => onUpdateProp(selWidget.id, k, e.target.value)}
+                />
+              </div>
+            )
+          }
+          // barcode widget: value field with HBS chips
+          if (k === 'value' && selWidget.type === 'barcode') {
+            return (
+              <div key={k} className="prow" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                <label style={{ marginBottom: 4 }}>Valor (HBS)</label>
+                <input
+                  key={selWidget.id + '_bval'}
+                  type="text"
+                  defaultValue={String(v ?? '')}
+                  style={{ fontFamily: 'monospace', fontSize: 11 }}
+                  onInput={e => onUpdateProp(selWidget.id, k, e.target.value)}
+                />
+                <div className="hbs-chips" style={{ marginTop: 4 }}>
+                  {(hbsList).map(h => (
+                    <button key={h} className="hbs-chip" title={h}
+                      onClick={() => onUpdateProp(selWidget.id, 'value', h)}
+                    ><i className="ti ti-copy" /><span>{h}</span></button>
+                  ))}
+                </div>
+              </div>
+            )
+          }
+          if (k === 'format' && selWidget.type === 'barcode') {
+            return (
+              <div key={k} className="prow">
+                <label>Formato</label>
+                <select defaultValue={v} onChange={e => onUpdateProp(selWidget.id, k, e.target.value)}>
+                  <option value="qr">QR Code</option>
+                </select>
+              </div>
+            )
+          }
           const lbl = PLABELS[k] || k
           if (k === 'objectFit') {
             return (

@@ -62,6 +62,20 @@ export const WIDGET_TYPES = [
     sub: 'Mensaje, helpers',
     hbs: '{{currency}} {{formatDate}}',
   },
+  {
+    type: 'html',
+    icon: 'ti ti-code',
+    name: 'HTML / JS',
+    sub: 'Código HTML libre con scripts',
+    hbs: null,
+  },
+  {
+    type: 'barcode',
+    icon: 'ti ti-qrcode',
+    name: 'Código de Barras / QR',
+    sub: 'QR o barcode desde helpers',
+    hbs: '{{order.commerceSequentialId}}',
+  },
 ]
 
 export const WDEF = {
@@ -74,6 +88,8 @@ export const WDEF = {
   divider:  { style: 'solid', color: '#e8e8e8', height: null, colSpan: 4 },
   text:     { content: 'Información importante del pedido', fontSize: 10, fontFamily: '', fontWeight: 'normal', fontStyle: 'normal', color: '#111111', textAlign: 'left', height: null, colSpan: 4 },
   summary:  { colCount: 3, columns: { c0: ['orderNum', 'date', 'total', 'logistic', 'deliveryType', 'deliveryDate'], c1: ['clientName', 'ci', 'phone', 'address', 'payment'], c2: ['storeName', 'storePhone', 'itemCount'] }, columnStyles: {}, height: null, colSpan: 4, fieldStyles: {}, customFields: {} },
+  html:     { content: '<div style="padding:8px 14px">\n  <!-- tu HTML aquí -->\n</div>', height: null, colSpan: 4 },
+  barcode:  { value: '{{order.commerceSequentialId}}', format: 'qr', size: 120, colSpan: 1, height: null },
 }
 
 export const PLABELS = {
@@ -127,6 +143,9 @@ export const PLABELS = {
   fontWeight: 'Negrita',
   fontStyle: 'Cursiva',
   textAlign: 'Alineación',
+  value: 'Valor (HBS)',
+  format: 'Formato',
+  size: 'Tamaño (px)',
 }
 
 export const HBS_BY_TYPE = {
@@ -184,6 +203,13 @@ export const HBS_BY_TYPE = {
     '{{count order.items}}',
     '{{root.store.name}}',
     '{{root.store.phone}}',
+  ],
+  html: [],
+  barcode: [
+    '{{order.commerceSequentialId}}',
+    '{{order.customer.documentNumber}}',
+    '{{order.addresses.[0].streetName}} {{order.addresses.[0].streetNumber}}',
+    '{{root.store.website}}',
   ],
 }
 
