@@ -40,6 +40,16 @@ export function fmtDate(isoStr) {
   }
 }
 
+export function fmtTime(isoStr) {
+  if (!isoStr) return ''
+  try {
+    const d = new Date(isoStr)
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  } catch {
+    return isoStr
+  }
+}
+
 export function fmtCurrency(n, loc, cur) {
   try {
     return new Intl.NumberFormat(loc || 'es-AR', {
@@ -150,6 +160,7 @@ function resolveExpr(expr, data) {
   if (parts.length === 1) return resolvePath(parts[0])
   const [name, arg] = parts
   if (name === 'formatDate') return fmtDate(resolvePath(arg))
+  if (name === 'formatTime') return fmtTime(resolvePath(arg))
   if (name === 'currency') return fmtCurrency(Number(resolvePath(arg)), 'es-UY', 'UYU')
   if (name === 'uppercase') return String(resolvePath(arg) ?? '').toUpperCase()
   if (name === 'count' || name === 'sumArray') { const v = getPath(arg, data); return Array.isArray(v) ? v.length : v }

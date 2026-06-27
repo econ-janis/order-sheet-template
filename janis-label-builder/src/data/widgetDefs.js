@@ -165,6 +165,7 @@ export const HBS_BY_TYPE = {
     '{{order.shippingData.logisticsInfo.[0].deliveryCompany}}',
     '{{formatDate ... "dd/MM HH:mm"}}',
     '{{order.shippingData.address.street}}',
+    '{{formatTime order.shippings.[0].deliveryWindow.initialDate}} - {{formatTime order.shippings.[0].deliveryWindow.finalDate}}',
   ],
   products: [
     '{{#each order.items}}',
@@ -203,6 +204,7 @@ export const HBS_BY_TYPE = {
     '{{count order.items}}',
     '{{root.store.name}}',
     '{{root.store.phone}}',
+    '{{formatTime order.shippings.[0].deliveryWindow.initialDate}} - {{formatTime order.shippings.[0].deliveryWindow.finalDate}}',
   ],
   html: [],
   barcode: [
