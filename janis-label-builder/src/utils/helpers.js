@@ -1,3 +1,27 @@
+/* ── Derive {{path}} helpers from a sample-data JSON structure ──────────────
+   Walks the object tree and produces one helper string per leaf value.
+   Arrays emit an {{#each path}} entry plus recurse into the first element. */
+export function deriveHbsFromData(data, prefix = '', depth = 0) {
+  if (!data || typeof data !== 'object' || depth > 4) return []
+  const results = []
+  for (const [k, v] of Object.entries(data)) {
+    // skip internal aliases and very long keys
+    if (k.length > 40) continue
+    const path = prefix ? `${prefix}.${k}` : k
+    if (Array.isArray(v)) {
+      results.push(`{{#each ${path}}}`)
+      if (v.length > 0 && v[0] !== null && typeof v[0] === 'object') {
+        results.push(...deriveHbsFromData(v[0], `${path}.[0]`, depth + 1))
+      }
+    } else if (v !== null && typeof v === 'object') {
+      results.push(...deriveHbsFromData(v, path, depth + 1))
+    } else if (v != null) {
+      results.push(`{{${path}}}`)
+    }
+  }
+  return results
+}
+
 export function uid() {
   return Math.random().toString(36).slice(2, 8)
 }

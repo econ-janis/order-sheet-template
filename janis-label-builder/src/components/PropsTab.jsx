@@ -28,14 +28,14 @@ function copyText(text, el) {
   })
 }
 
-function HbsAutocomplete({ hbsList, selWidget, sampleData, onAddHelper }) {
+function HbsAutocomplete({ hbsList, selWidget, sampleData, onAddHelper, dynamicHbs }) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const inputRef = useRef(null)
 
-  // Suggestions: widget-specific helpers first, then every other available helper
-  const pool = [...new Set([...hbsList, ...ALL_HBS])]
+  // Suggestions: widget-specific helpers first, then dynamic from saved JSON, then static list
+  const pool = [...new Set([...hbsList, ...(dynamicHbs || []), ...ALL_HBS])]
   const q = query.trim().toLowerCase()
   const suggestions = q ? pool.filter(h => h.toLowerCase().includes(q)) : pool
 
@@ -94,7 +94,7 @@ function HbsAutocomplete({ hbsList, selWidget, sampleData, onAddHelper }) {
   )
 }
 
-export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdateFieldStyle, onUpdateCustomField, onUpdateCustomFieldLabel, onAddCustomField, onUpdateColCount, onAddHelper, sampleData, onUpdateColumnStyle, onRestoreField }) {
+export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdateFieldStyle, onUpdateCustomField, onUpdateCustomFieldLabel, onAddCustomField, onUpdateColCount, onAddHelper, sampleData, dynamicHbs, onUpdateColumnStyle, onRestoreField }) {
   if (!selWidget) {
     return (
       <div className="parea">
@@ -534,6 +534,7 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
           selWidget={selWidget}
           sampleData={sampleData}
           onAddHelper={onAddHelper}
+          dynamicHbs={dynamicHbs}
         />
         {hbsList.length > 0 && (
           <div className="hbs-chips" style={{ marginTop: 6 }}>

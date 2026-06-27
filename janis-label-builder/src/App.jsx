@@ -5,7 +5,7 @@ import RightPanel from './components/RightPanel'
 import TemplateModal from './components/TemplateModal'
 import { WDEF } from './data/widgetDefs'
 import { SAMPLE_DATA } from './data/sampleData'
-import { uid } from './utils/helpers'
+import { uid, deriveHbsFromData } from './utils/helpers'
 import './App.css'
 
 export default function App() {
@@ -13,7 +13,17 @@ export default function App() {
   const [selId, setSelId] = useState(null)
   const [selFieldKey, setSelFieldKey] = useState(null)
   const [activeTab, setActiveTab] = useState('props')
-  const [sampleData, setSampleData] = useState(() => JSON.parse(JSON.stringify(SAMPLE_DATA)))
+  const [sampleData, setSampleData] = useState(() => {
+    try {
+      const saved = localStorage.getItem('jlb_sample_data')
+      return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(SAMPLE_DATA))
+    } catch {
+      return JSON.parse(JSON.stringify(SAMPLE_DATA))
+    }
+  })
+  const [dynamicHbs, setDynamicHbs] = useState(() => deriveHbsFromData(
+    (() => { try { const s = localStorage.getItem('jlb_sample_data'); return s ? JSON.parse(s) : SAMPLE_DATA } catch { return SAMPLE_DATA } })()
+  ))
   const [showTemplateModal, setShowTemplateModal] = useState(widgets.length === 0)
   const dragTypeRef = useRef(null)
 
@@ -274,6 +284,8 @@ export default function App() {
         selWidget={selWidget}
         sampleData={sampleData}
         setSampleData={setSampleData}
+        onSaveData={d => setDynamicHbs(deriveHbsFromData(d))}
+        dynamicHbs={dynamicHbs}
         onUpdateProp={updateProp}
         selFieldKey={selFieldKey}
         onUpdateFieldStyle={updateFieldStyle}
