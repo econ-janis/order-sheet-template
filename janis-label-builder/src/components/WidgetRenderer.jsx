@@ -312,7 +312,7 @@ function Products({ d, v }) {
           {v.items.map((it, i) => (
             <tr key={i}>
               <td>{it.name || ''}</td>
-              {d.showEan && <td>{it.pickingResult?.[0]?.ean ?? ''}</td>}
+              {d.showEan && <td>{it.ean ?? ''}</td>}
               {d.showSubst && <td>{it.isSubstituted ? 'Sí' : '-'}</td>}
               {d.showPrice && <td>{fmtCurrency(it.purchasedPrice, v.loc, v.cur)}</td>}
               {d.showOrigQty && <td>{it.purchasedQuantity ?? ''}</td>}
