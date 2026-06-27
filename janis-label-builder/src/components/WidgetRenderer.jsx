@@ -19,11 +19,44 @@ function customLabel(d, k) {
   return d.customFields?.[k]?.label || ''
 }
 
+function isRectField(d, k) {
+  return d.customFields?.[k]?.contentMode === 'rect'
+}
+
+function rectColSpan(d, k) {
+  return d.customFields?.[k]?.rectCols || 1
+}
+
+function RectBox({ cf }) {
+  const rows   = cf.rectRows   || 2
+  const color  = cf.rectBorderColor  || '#333333'
+  const width  = cf.rectBorderWidth  || 1
+  const style  = cf.rectBorderStyle  || 'solid'
+  return (
+    <div style={{
+      border: `${width}px ${style} ${color}`,
+      height: `${rows * 18}px`,
+      width: '100%',
+      borderRadius: 2,
+      boxSizing: 'border-box',
+    }} />
+  )
+}
+
 /* ── Field-level style helper (edit mode shows a placeholder for hidden fields) ── */
 function makeRenderField(d, v, builtinFields, sampleData) {
   return (k) => {
     if (k.startsWith('custom_')) {
       const lbl = customLabel(d, k)
+      const cf  = d.customFields?.[k] || {}
+      if (cf.contentMode === 'rect') {
+        return (
+          <div className="w-custom-field">
+            {lbl && <label>{lbl}</label>}
+            <RectBox cf={cf} />
+          </div>
+        )
+      }
       const val = customContent(d, k, sampleData) || 'Campo de texto'
       const s = d.fieldStyles?.[k]
       return (
@@ -44,6 +77,15 @@ function makeDisplayCell(d, v, builtinFields, sampleData) {
   return (k) => {
     if (k.startsWith('custom_')) {
       const lbl = customLabel(d, k)
+      const cf  = d.customFields?.[k] || {}
+      if (cf.contentMode === 'rect') {
+        return (
+          <div className="w-custom-field">
+            {lbl && <label>{lbl}</label>}
+            <RectBox cf={cf} />
+          </div>
+        )
+      }
       const val = customContent(d, k, sampleData)
       if (!lbl && !val) return null
       const s = d.fieldStyles?.[k]

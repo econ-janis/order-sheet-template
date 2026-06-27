@@ -165,6 +165,15 @@ export default function App() {
     }))
   }
 
+  function updateCustomFieldProp(widgetId, fieldKey, propKey, val) {
+    setWidgets(prev => prev.map(w => {
+      if (w.id !== widgetId) return w
+      const prev_ = (w.data.customFields || {})[fieldKey] || {}
+      const customFields = { ...(w.data.customFields || {}), [fieldKey]: { ...prev_, [propKey]: val } }
+      return { ...w, data: { ...w.data, customFields } }
+    }))
+  }
+
   function addCustomField(widgetId) {
     const key = 'custom_' + uid()
     setWidgets(prev => prev.map(w => {
@@ -289,6 +298,7 @@ export default function App() {
         onUpdateFieldStyle={updateFieldStyle}
         onUpdateCustomField={updateCustomField}
         onUpdateCustomFieldLabel={updateCustomFieldLabel}
+        onUpdateCustomFieldProp={updateCustomFieldProp}
         onAddCustomField={addCustomField}
         onUpdateColCount={updateColCount}
         onAddHelper={addHelper}

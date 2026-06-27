@@ -95,7 +95,7 @@ function HbsAutocomplete({ hbsList, selWidget, sampleData, onAddHelper, dynamicH
   )
 }
 
-export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdateFieldStyle, onUpdateCustomField, onUpdateCustomFieldLabel, onAddCustomField, onUpdateColCount, onAddHelper, sampleData, dynamicHbs, onUpdateColumnStyle, onRestoreField }) {
+export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdateFieldStyle, onUpdateCustomField, onUpdateCustomFieldLabel, onUpdateCustomFieldProp, onAddCustomField, onUpdateColCount, onAddHelper, sampleData, dynamicHbs, onUpdateColumnStyle, onRestoreField }) {
   if (!selWidget) {
     return (
       <div className="parea">
@@ -168,31 +168,100 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
         <div className="pgroup">
           <div className="pgt">Campo: {selFieldKey}</div>
 
-          {isCustomField && (
-            <>
-              <div className="prow">
-                <label>Nombre</label>
-                <input
-                  key={selFieldKey + '_label'}
-                  type="text"
-                  defaultValue={selWidget.data.customFields?.[selFieldKey]?.label || ''}
-                  placeholder="Etiqueta del campo"
-                  onInput={e => onUpdateCustomFieldLabel(selWidget.id, selFieldKey, e.target.value)}
-                />
-              </div>
-              <div className="prow">
-                <label>Contenido</label>
-                <textarea
-                  key={selFieldKey}
-                  defaultValue={selWidget.data.customFields?.[selFieldKey]?.content || ''}
-                  data-field-key={selFieldKey}
-                  rows={2}
-                  style={{ fontSize: 11, padding: '4px 7px', borderRadius: 4, border: '0.5px solid var(--color-border-secondary)', background: 'var(--color-background-primary)', color: 'var(--color-text-primary)', width: '100%', resize: 'vertical' }}
-                  onInput={e => onUpdateCustomField(selWidget.id, selFieldKey, e.target.value)}
-                />
-              </div>
-            </>
-          )}
+          {isCustomField && (() => {
+            const cf = selWidget.data.customFields?.[selFieldKey] || {}
+            const isRect = cf.contentMode === 'rect'
+            return (
+              <>
+                <div className="prow">
+                  <label>Nombre</label>
+                  <input
+                    key={selFieldKey + '_label'}
+                    type="text"
+                    defaultValue={cf.label || ''}
+                    placeholder="Etiqueta del campo"
+                    onInput={e => onUpdateCustomFieldLabel(selWidget.id, selFieldKey, e.target.value)}
+                  />
+                </div>
+                <div className="prow prow-inline">
+                  <label>Tipo</label>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button
+                      className={`fsbtn${!isRect ? ' on' : ''}`}
+                      style={{ fontSize: 10, padding: '2px 8px' }}
+                      onClick={() => onUpdateCustomFieldProp(selWidget.id, selFieldKey, 'contentMode', 'text')}
+                    >Texto</button>
+                    <button
+                      className={`fsbtn${isRect ? ' on' : ''}`}
+                      style={{ fontSize: 10, padding: '2px 8px' }}
+                      onClick={() => onUpdateCustomFieldProp(selWidget.id, selFieldKey, 'contentMode', 'rect')}
+                    >Rectángulo</button>
+                  </div>
+                </div>
+                {!isRect && (
+                  <div className="prow">
+                    <label>Contenido</label>
+                    <textarea
+                      key={selFieldKey}
+                      defaultValue={cf.content || ''}
+                      data-field-key={selFieldKey}
+                      rows={2}
+                      style={{ fontSize: 11, padding: '4px 7px', borderRadius: 4, border: '0.5px solid var(--color-border-secondary)', background: 'var(--color-background-primary)', color: 'var(--color-text-primary)', width: '100%', resize: 'vertical' }}
+                      onInput={e => onUpdateCustomField(selWidget.id, selFieldKey, e.target.value)}
+                    />
+                  </div>
+                )}
+                {isRect && (
+                  <>
+                    <div className="prow">
+                      <label>Filas (alto)</label>
+                      <input
+                        key={selFieldKey + '_rows'}
+                        type="number"
+                        defaultValue={cf.rectRows || 2}
+                        min={1}
+                        max={20}
+                        onInput={e => onUpdateCustomFieldProp(selWidget.id, selFieldKey, 'rectRows', +e.target.value || 2)}
+                      />
+                    </div>
+                    <div className="prow">
+                      <label>Borde color</label>
+                      <input
+                        key={selFieldKey + '_bc'}
+                        type="color"
+                        defaultValue={cf.rectBorderColor || '#333333'}
+                        onChange={e => onUpdateCustomFieldProp(selWidget.id, selFieldKey, 'rectBorderColor', e.target.value)}
+                      />
+                    </div>
+                    <div className="prow">
+                      <label>Grosor (px)</label>
+                      <input
+                        key={selFieldKey + '_bw'}
+                        type="number"
+                        defaultValue={cf.rectBorderWidth || 1}
+                        min={1}
+                        max={10}
+                        onInput={e => onUpdateCustomFieldProp(selWidget.id, selFieldKey, 'rectBorderWidth', +e.target.value || 1)}
+                      />
+                    </div>
+                    <div className="prow">
+                      <label>Estilo borde</label>
+                      <select
+                        key={selFieldKey + '_bs'}
+                        defaultValue={cf.rectBorderStyle || 'solid'}
+                        onChange={e => onUpdateCustomFieldProp(selWidget.id, selFieldKey, 'rectBorderStyle', e.target.value)}
+                      >
+                        <option value="solid">Sólido</option>
+                        <option value="dashed">Guión</option>
+                        <option value="dotted">Punteado</option>
+                        <option value="double">Doble</option>
+                      </select>
+                    </div>
+                  </>
+                )}
+              </>
+            )
+          })()}
 
           <div className="prow">
             <label>Fuente</label>
