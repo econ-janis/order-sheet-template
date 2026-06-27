@@ -28,19 +28,23 @@ function copyText(text, el) {
   })
 }
 
-function HbsAutocomplete({ hbsList, selWidget, sampleData, onAddHelper }) {
+function HbsAutocomplete({ hbsList, selWidget, sampleData, onAddHelper, dynamicHbs }) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
   const inputRef = useRef(null)
 
-  // Suggestions: widget-specific helpers first, then every other available helper
-  const pool = [...new Set([...hbsList, ...ALL_HBS])]
+  // Suggestions: widget-specific helpers first, then dynamic from saved JSON, then static list
+  const pool = [...new Set([...hbsList, ...(dynamicHbs || []), ...ALL_HBS])]
   const q = query.trim().toLowerCase()
   const suggestions = q ? pool.filter(h => h.toLowerCase().includes(q)) : pool
 
   function pick(h) {
-    if (!h || !selWidget) return
-    onAddHelper(selWidget.id, h)
+    if (!h) return
+    navigator.clipboard.writeText(h).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1100)
+    })
     setQuery('')
     setOpen(false)
     inputRef.current?.focus()
@@ -52,19 +56,20 @@ function HbsAutocomplete({ hbsList, selWidget, sampleData, onAddHelper }) {
         <input
           ref={inputRef}
           className="hbs-ac-input"
-          value={query}
+          value={copied ? '✓ copiado' : query}
           placeholder="Buscar o escribir helper…"
           autoComplete="off"
           spellCheck={false}
-          onChange={e => { setQuery(e.target.value); setOpen(true) }}
-          onFocus={() => setOpen(true)}
+          readOnly={copied}
+          onChange={e => { if (!copied) { setQuery(e.target.value); setOpen(true) } }}
+          onFocus={() => { if (!copied) setOpen(true) }}
           onBlur={() => setTimeout(() => setOpen(false), 160)}
           onKeyDown={e => {
             if (e.key === 'Enter' && query.trim()) { pick(suggestions[0] || query.trim()); e.preventDefault() }
             if (e.key === 'Escape') { setQuery(''); setOpen(false) }
           }}
         />
-        {query && (
+        {query && !copied && (
           <button className="hbs-ac-clear" onClick={() => { setQuery(''); setOpen(false); inputRef.current?.focus() }}>
             <i className="ti ti-x" style={{ fontSize: 9 }} />
           </button>
@@ -89,7 +94,7 @@ function HbsAutocomplete({ hbsList, selWidget, sampleData, onAddHelper }) {
   )
 }
 
-export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdateFieldStyle, onUpdateCustomField, onUpdateCustomFieldLabel, onAddCustomField, onUpdateColCount, onAddHelper, sampleData, onUpdateColumnStyle, onRestoreField }) {
+export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdateFieldStyle, onUpdateCustomField, onUpdateCustomFieldLabel, onAddCustomField, onUpdateColCount, onAddHelper, sampleData, dynamicHbs, onUpdateColumnStyle, onRestoreField }) {
   if (!selWidget) {
     return (
       <div className="parea">
@@ -529,6 +534,7 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
           selWidget={selWidget}
           sampleData={sampleData}
           onAddHelper={onAddHelper}
+          dynamicHbs={dynamicHbs}
         />
         {hbsList.length > 0 && (
           <div className="hbs-chips" style={{ marginTop: 6 }}>

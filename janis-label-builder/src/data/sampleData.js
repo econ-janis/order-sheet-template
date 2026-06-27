@@ -72,6 +72,13 @@ export const SAMPLE_DATA = {
       documentNumber: '42431914',
       phone: '+598099651883',
     },
+    clientProfileData: {
+      firstName: 'Victoria',
+      lastName: 'Praderi',
+      document: '42431914',
+      phone: '+598099651883',
+    },
+    creationDate: '2026-06-25T16:49:18.527Z',
     payments: [
       {
         paymentSystemName: 'Visa',
@@ -79,6 +86,31 @@ export const SAMPLE_DATA = {
         cardLastDigits: '5060',
       },
     ],
+    paymentData: {
+      transactions: [
+        {
+          payments: [
+            { paymentSystemName: 'Visa', amount: 1610 },
+          ],
+        },
+      ],
+    },
+    shippingData: {
+      address: {
+        street: 'Washington',
+        number: '1673',
+        city: 'Paysandú',
+        state: 'Departamento de Paysandú',
+        country: 'URY',
+      },
+      logisticsInfo: [
+        {
+          deliveryCompany: 'Ta Ta Paysandú (Bvar. Artigas esq. Washington)',
+          deliveryChannel: 'store_pickup',
+          shippingEstimateDate: '2026-06-25T22:00:00.000Z',
+        },
+      ],
+    },
     shippings: [
       {
         companyName: 'Ta Ta Paysandú (Bvar. Artigas esq. Washington) / Retirá en el local',
