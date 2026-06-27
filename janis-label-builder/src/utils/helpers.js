@@ -191,9 +191,19 @@ function genColsHbs(d, builtinHbs, builtinLabels, wrapClass, extraStyle) {
     html += `  <div class="w-col"${colStyle ? ` style="${colStyle}"` : ''}>\n`
     for (const k of (cols[col] || [])) {
       if (k.startsWith('custom_')) {
-        const lbl = d.customFields?.[k]?.label || ''
-        const val = d.customFields?.[k]?.content || ''
-        html += `    <div class="wcf">${lbl ? `<label>${lbl}</label>` : ''}<span>${val}</span></div>\n`
+        const cf = d.customFields?.[k] || {}
+        const lbl = cf.label || ''
+        if (cf.contentMode === 'rect') {
+          const rows = cf.rectRows || 2
+          const color = cf.rectBorderColor || '#333333'
+          const bw = cf.rectBorderWidth || 1
+          const bs = cf.rectBorderStyle || 'solid'
+          const h = rows * 18
+          html += `    <div class="wcf">${lbl ? `<label>${lbl}</label>` : ''}<div style="border:${bw}px ${bs} ${color};height:${h}px;width:100%;box-sizing:border-box;border-radius:2px"></div></div>\n`
+        } else {
+          const val = cf.content || ''
+          html += `    <div class="wcf">${lbl ? `<label>${lbl}</label>` : ''}<span>${val}</span></div>\n`
+        }
       } else {
         const lbl = builtinLabels[k]
         const val = builtinHbs[k]
