@@ -262,7 +262,7 @@ export function genHbs(w) {
     (d.showOrigQty ? '    <th>C. orig</th>\n' : '') +
     (d.showFinalQty ? '    <th>C. final</th>\n' : '') +
     `  </tr></thead>\n  <tbody>\n  {{#each order.items}}\n    <tr>\n      <td>{{name}}</td>\n` +
-    (d.showEan ? '      <td>{{pickingResult.[0].ean}}</td>\n' : '') +
+    (d.showEan ? '      <td>{{ean}}</td>\n' : '') +
     (d.showSubst ? '      <td>{{#if isSubstituted}}Sí{{else}}-{{/if}}</td>\n' : '') +
     (d.showPrice ? `      <td>{{currency purchasedPrice locale="${d.locale}" currencyCode="${d.currency}"}}</td>\n` : '') +
     (d.showOrigQty ? '      <td>{{purchasedQuantity}}</td>\n' : '') +
