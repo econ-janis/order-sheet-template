@@ -288,7 +288,7 @@ function Dispatch({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sam
 
 /* ── Products (rigid) ── */
 function Products({ d, v }) {
-  const colSpan = 1 + (d.showSubst ? 1 : 0) + (d.showPrice ? 1 : 0) + (d.showOrigQty ? 1 : 0)
+  const colSpan = 1 + (d.showSubst ? 1 : 0) + (d.showPrice ? 1 : 0) + (d.showOrigQty ? 1 : 0) + (d.showEan ? 1 : 0)
   const tb = d.tableBorder || {}
   const tableStyle = tb.visible ? {
     border: `${tb.width || 1}px ${tb.style || 'solid'} ${tb.color || '#cccccc'}`,
@@ -301,6 +301,7 @@ function Products({ d, v }) {
         <thead>
           <tr>
             <th>Descripción</th>
+            {d.showEan && <th>EAN</th>}
             {d.showSubst && <th>Sust.</th>}
             {d.showPrice && <th>P. unit.</th>}
             {d.showOrigQty && <th>C. orig</th>}
@@ -311,6 +312,7 @@ function Products({ d, v }) {
           {v.items.map((it, i) => (
             <tr key={i}>
               <td>{it.name || ''}</td>
+              {d.showEan && <td>{it.pickingResult?.[0]?.ean ?? ''}</td>}
               {d.showSubst && <td>{it.isSubstituted ? 'Sí' : '-'}</td>}
               {d.showPrice && <td>{fmtCurrency(it.purchasedPrice, v.loc, v.cur)}</td>}
               {d.showOrigQty && <td>{it.purchasedQuantity ?? ''}</td>}
