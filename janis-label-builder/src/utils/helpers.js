@@ -253,21 +253,21 @@ export function genHbs(w) {
     const borderStyle = tb.visible
       ? `border:${tb.width || 1}px ${tb.style || 'solid'} ${tb.color || '#cccccc'};border-radius:${tb.rounded !== false ? (tb.radius ?? 5) : 0}px;overflow:hidden;`
       : ''
+    const COL_ORDER_DEFAULT = ['desc','ean','subst','price','origQty','finalQty']
+    const COL_TH  = { desc:'Descripción', ean:'EAN', subst:'Sust.', price:'Precio', origQty:'C. orig', finalQty:'C. final' }
+    const COL_SHOW = { desc:'showDesc', ean:'showEan', subst:'showSubst', price:'showPrice', origQty:'showOrigQty', finalQty:'showFinalQty' }
+    const COL_TD  = { desc:'{{name}}', ean:'{{ean}}', subst:'{{#if isSubstituted}}Sí{{else}}-{{/if}}', price:`{{currency purchasedPrice locale="${d.locale}" currencyCode="${d.currency}"}}`, origQty:'{{purchasedQuantity}}', finalQty:'{{pickingResult.[0].totalQuantity}}' }
+    const order = (d.columnOrder || COL_ORDER_DEFAULT).filter(k => d[COL_SHOW[k]] !== false)
+    const hasFinal = order.includes('finalQty')
+    const totSpan = Math.max(1, order.length - (hasFinal ? 1 : 0))
     return (
     `<div class="w-products"${borderStyle ? ` style="${borderStyle}"` : ''}>\n<table>\n  <thead><tr>\n` +
-    `    <th>Descripción</th>\n` +
-    (d.showEan ? '    <th>EAN</th>\n' : '') +
-    (d.showSubst ? '    <th>Sust.</th>\n' : '') +
-    (d.showPrice ? '    <th>Precio</th>\n' : '') +
-    (d.showOrigQty ? '    <th>C. orig</th>\n' : '') +
-    (d.showFinalQty ? '    <th>C. final</th>\n' : '') +
-    `  </tr></thead>\n  <tbody>\n  {{#each order.items}}\n    <tr>\n      <td>{{name}}</td>\n` +
-    (d.showEan ? '      <td>{{pickingResult.[0].ean}}</td>\n' : '') +
-    (d.showSubst ? '      <td>{{#if isSubstituted}}Sí{{else}}-{{/if}}</td>\n' : '') +
-    (d.showPrice ? `      <td>{{currency purchasedPrice locale="${d.locale}" currencyCode="${d.currency}"}}</td>\n` : '') +
-    (d.showOrigQty ? '      <td>{{purchasedQuantity}}</td>\n' : '') +
-    (d.showFinalQty ? '      <td>{{pickingResult.[0].totalQuantity}}</td>\n' : '') +
-    `    </tr>\n  {{/each}}\n    <tr class="total">\n      <td>Total enviados</td>\n      <td>{{sumArray order.items "purchasedQuantity"}}</td>\n    </tr>\n  </tbody>\n</table>\n</div>`
+    order.map(k => `    <th>${COL_TH[k]}</th>\n`).join('') +
+    `  </tr></thead>\n  <tbody>\n  {{#each order.items}}\n    <tr>\n` +
+    order.map(k => `      <td>${COL_TD[k]}</td>\n`).join('') +
+    `    </tr>\n  {{/each}}\n    <tr class="total">\n      <td colspan="${totSpan}">Total enviados</td>\n` +
+    (hasFinal ? `      <td>{{pickingResult.[0].totalQuantity}}</td>\n` : '') +
+    `    </tr>\n  </tbody>\n</table>\n</div>`
   )}
 
   if (w.type === 'footer') {
