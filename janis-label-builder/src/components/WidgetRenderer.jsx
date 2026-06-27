@@ -286,42 +286,44 @@ function Dispatch({ w, v, isSelected, onReorder, selFieldKey, onFieldSelect, sam
   )
 }
 
+/* ── Products column definitions ── */
+const PROD_COL_DEFS = {
+  desc:     { th: 'Descripción', showKey: 'showDesc',     td: (it)    => it.name || '' },
+  ean:      { th: 'EAN',         showKey: 'showEan',      td: (it)    => it.ean ?? '' },
+  subst:    { th: 'Sust.',       showKey: 'showSubst',    td: (it)    => it.isSubstituted ? 'Sí' : '-' },
+  price:    { th: 'P. unit.',    showKey: 'showPrice',    td: (it, v) => fmtCurrency(it.purchasedPrice, v.loc, v.cur) },
+  origQty:  { th: 'C. orig',    showKey: 'showOrigQty',  td: (it)    => it.purchasedQuantity ?? '' },
+  finalQty: { th: 'C. final',   showKey: 'showFinalQty', td: (it)    => it.pickingResult?.[0]?.totalQuantity ?? it.quantity ?? '' },
+}
+export const PROD_COL_ORDER_DEFAULT = ['desc','ean','subst','price','origQty','finalQty']
+
 /* ── Products (rigid) ── */
 function Products({ d, v }) {
-  const colSpan = 1 + (d.showSubst ? 1 : 0) + (d.showPrice ? 1 : 0) + (d.showOrigQty ? 1 : 0) + (d.showEan ? 1 : 0)
+  const order = d.columnOrder || PROD_COL_ORDER_DEFAULT
+  const activeCols = order
+    .filter(k => PROD_COL_DEFS[k] && d[PROD_COL_DEFS[k].showKey] !== false)
+    .map(k => ({ key: k, ...PROD_COL_DEFS[k] }))
   const tb = d.tableBorder || {}
   const tableStyle = tb.visible ? {
     border: `${tb.width || 1}px ${tb.style || 'solid'} ${tb.color || '#cccccc'}`,
     borderRadius: tb.rounded !== false ? (tb.radius ?? 5) : 0,
     overflow: 'hidden',
   } : {}
+  const hasFinal = activeCols.some(c => c.key === 'finalQty')
+  const totColSpan = Math.max(1, activeCols.length - (hasFinal ? 1 : 0))
   return (
     <div className="w-products" style={tableStyle}>
       <table>
         <thead>
-          <tr>
-            <th>Descripción</th>
-            {d.showEan && <th>EAN</th>}
-            {d.showSubst && <th>Sust.</th>}
-            {d.showPrice && <th>P. unit.</th>}
-            {d.showOrigQty && <th>C. orig</th>}
-            {d.showFinalQty && <th>C. final</th>}
-          </tr>
+          <tr>{activeCols.map(c => <th key={c.key}>{c.th}</th>)}</tr>
         </thead>
         <tbody>
           {v.items.map((it, i) => (
-            <tr key={i}>
-              <td>{it.name || ''}</td>
-              {d.showEan && <td>{it.ean ?? ''}</td>}
-              {d.showSubst && <td>{it.isSubstituted ? 'Sí' : '-'}</td>}
-              {d.showPrice && <td>{fmtCurrency(it.purchasedPrice, v.loc, v.cur)}</td>}
-              {d.showOrigQty && <td>{it.purchasedQuantity ?? ''}</td>}
-              {d.showFinalQty && <td>{it.pickingResult?.[0]?.totalQuantity ?? it.quantity ?? ''}</td>}
-            </tr>
+            <tr key={i}>{activeCols.map(c => <td key={c.key}>{c.td(it, v)}</td>)}</tr>
           ))}
           <tr className="tot" style={{background:'#f5f5f5',color:'#999',fontSize:'0.88em'}}>
-            <td colSpan={colSpan}>Total enviados</td>
-            {d.showFinalQty && <td>{v.total}</td>}
+            <td colSpan={totColSpan}>Total enviados</td>
+            {hasFinal && <td>{v.total}</td>}
           </tr>
         </tbody>
       </table>
