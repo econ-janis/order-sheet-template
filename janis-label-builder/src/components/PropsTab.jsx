@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { PLABELS, HBS_BY_TYPE, BUILTIN_FIELDS_BY_TYPE, FIELD_LABELS } from '../data/widgetDefs'
+import { PLABELS, HBS_BY_TYPE, BUILTIN_FIELDS_BY_TYPE, FIELD_LABELS, WDEF } from '../data/widgetDefs'
 import { resolveTemplate } from '../utils/helpers'
 
 const WIDGETS_WITH_COLUMNS = ['header', 'client', 'dispatch', 'footer', 'summary']
@@ -237,7 +237,7 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
       {/* 3. Propiedades */}
       <div className="pgroup">
         <div className="pgt">Widget: {selWidget.type}</div>
-        {Object.entries(selWidget.data).map(([k, v]) => {
+        {Object.entries({ ...(WDEF[selWidget.type] || {}), ...selWidget.data }).map(([k, v]) => {
           if (Array.isArray(v) || (v !== null && typeof v === 'object')) return null
           if (k === 'height' || k === 'colSpan' || k === 'colCount') return null
           if (k === 'imageUrl' && selWidget.data.mode !== 'image' && selWidget.type !== 'logo') return null
