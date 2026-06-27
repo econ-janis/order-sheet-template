@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { PLABELS, HBS_BY_TYPE, BUILTIN_FIELDS_BY_TYPE, FIELD_LABELS, WDEF } from '../data/widgetDefs'
+import { PROD_COL_ORDER_DEFAULT } from './WidgetRenderer'
 import { resolveTemplate } from '../utils/helpers'
 
 const WIDGETS_WITH_COLUMNS = ['header', 'client', 'dispatch', 'footer', 'summary']
@@ -240,6 +241,8 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
         {Object.entries({ ...(WDEF[selWidget.type] || {}), ...selWidget.data }).map(([k, v]) => {
           if (Array.isArray(v) || (v !== null && typeof v === 'object')) return null
           if (k === 'height' || k === 'colSpan' || k === 'colCount') return null
+          // products columns managed in dedicated section
+          if (selWidget.type === 'products' && (k === 'columnOrder' || k.startsWith('show'))) return null
           if (k === 'imageUrl' && selWidget.data.mode !== 'image' && selWidget.type !== 'logo') return null
           // html widget: render large code textarea for content
           if (k === 'content' && selWidget.type === 'html') {
@@ -450,6 +453,48 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
                 <input key={`tb_radius_${tb.visible}`} type="number" defaultValue={tb.radius ?? 5} min={0} max={24} title="0 = cuadradas, mayor = redondeadas" onInput={e => upd('radius', +e.target.value)} />
               </div>
             </>)}
+          </div>
+        )
+      })()}
+
+      {/* 3c. Orden de columnas products */}
+      {selWidget.type === 'products' && (() => {
+        const PROD_LABELS = { desc: 'Descripción', ean: 'EAN', subst: 'Sust.', price: 'P. unit.', origQty: 'C. orig', finalQty: 'C. final' }
+        const SHOW_KEYS   = { desc: 'showDesc', ean: 'showEan', subst: 'showSubst', price: 'showPrice', origQty: 'showOrigQty', finalQty: 'showFinalQty' }
+        const order = selWidget.data.columnOrder || PROD_COL_ORDER_DEFAULT
+        const dragging = { current: null }
+
+        function handleDragStart(k) { dragging.current = k }
+        function handleDrop(k) {
+          const from = dragging.current
+          if (!from || from === k) return
+          const next = [...order]
+          const fi = next.indexOf(from), ti = next.indexOf(k)
+          next.splice(fi, 1); next.splice(ti, 0, from)
+          onUpdateProp(selWidget.id, 'columnOrder', next)
+        }
+
+        return (
+          <div className="pgroup">
+            <div className="pgt">Columnas de productos</div>
+            {order.map(k => (
+              <div
+                key={k}
+                draggable
+                onDragStart={() => handleDragStart(k)}
+                onDragOver={e => e.preventDefault()}
+                onDrop={() => handleDrop(k)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', cursor: 'grab' }}
+              >
+                <i className="ti ti-grip-vertical" style={{ fontSize: 11, opacity: 0.4 }} />
+                <input
+                  type="checkbox"
+                  checked={selWidget.data[SHOW_KEYS[k]] !== false}
+                  onChange={e => onUpdateProp(selWidget.id, SHOW_KEYS[k], e.target.checked)}
+                />
+                <span style={{ fontSize: 11 }}>{PROD_LABELS[k]}</span>
+              </div>
+            ))}
           </div>
         )
       })()}
