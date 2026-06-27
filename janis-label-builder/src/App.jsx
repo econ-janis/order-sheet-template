@@ -21,13 +21,12 @@ export default function App() {
       return JSON.parse(JSON.stringify(SAMPLE_DATA))
     }
   })
-  const [dynamicHbs, setDynamicHbs] = useState(() => deriveHbsFromData(
-    (() => { try { const s = localStorage.getItem('jlb_sample_data'); return s ? JSON.parse(s) : SAMPLE_DATA } catch { return SAMPLE_DATA } })()
-  ))
+  const [dynamicHbs, setDynamicHbs] = useState(() => deriveHbsFromData(sampleData))
   const [showTemplateModal, setShowTemplateModal] = useState(widgets.length === 0)
   const dragTypeRef = useRef(null)
 
   useEffect(() => { setSelFieldKey(null) }, [selId])
+  useEffect(() => { setDynamicHbs(deriveHbsFromData(sampleData)) }, [sampleData])
 
   function addWidget(type, afterIndex = -1, fitSpan = null) {
     const w = { id: uid(), type, data: JSON.parse(JSON.stringify(WDEF[type])) }
@@ -284,7 +283,6 @@ export default function App() {
         selWidget={selWidget}
         sampleData={sampleData}
         setSampleData={setSampleData}
-        onSaveData={d => setDynamicHbs(deriveHbsFromData(d))}
         dynamicHbs={dynamicHbs}
         onUpdateProp={updateProp}
         selFieldKey={selFieldKey}

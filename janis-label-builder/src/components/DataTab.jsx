@@ -1,47 +1,38 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { SAMPLE_DATA } from '../data/sampleData'
 
 const LS_KEY = 'jlb_sample_data'
 
-export default function DataTab({ sampleData, setSampleData, onSaveData }) {
+export default function DataTab({ sampleData, setSampleData }) {
   const [status, setStatus] = useState({ ok: true, msg: '✓ JSON válido' })
   const [dirty, setDirty] = useState(false)
   const [savedMsg, setSavedMsg] = useState(false)
-  const pendingRef = useRef(null)
 
   function onJsonChange(val) {
     try {
-      pendingRef.current = JSON.parse(val)
-      setSampleData(pendingRef.current)
+      setSampleData(JSON.parse(val))
       setStatus({ ok: true, msg: '✓ JSON válido' })
       setDirty(true)
     } catch (e) {
-      pendingRef.current = null
-      setStatus({ ok: false, msg: '✗ Error: ' + e.message.slice(0, 40) })
-      setDirty(false)
+      setStatus({ ok: false, msg: '✗ ' + e.message.slice(0, 40) })
     }
   }
 
   function save() {
-    if (!pendingRef.current && status.ok) pendingRef.current = sampleData
-    if (!pendingRef.current) return
     try {
-      localStorage.setItem(LS_KEY, JSON.stringify(pendingRef.current))
-      onSaveData?.(pendingRef.current)
+      localStorage.setItem(LS_KEY, JSON.stringify(sampleData))
       setDirty(false)
       setSavedMsg(true)
       setTimeout(() => setSavedMsg(false), 1500)
-    } catch (e) {
+    } catch {
       setStatus({ ok: false, msg: '✗ Error al guardar' })
     }
   }
 
   function reset() {
     const d = JSON.parse(JSON.stringify(SAMPLE_DATA))
-    pendingRef.current = d
     setSampleData(d)
     localStorage.removeItem(LS_KEY)
-    onSaveData?.(d)
     setStatus({ ok: true, msg: '✓ JSON válido' })
     setDirty(false)
   }
@@ -49,16 +40,19 @@ export default function DataTab({ sampleData, setSampleData, onSaveData }) {
   return (
     <div className="json-wrap">
       <div style={{ fontSize: 10, color: 'var(--color-text-secondary)', padding: '2px 0 4px' }}>
-        Editá el JSON y guardá para actualizar los helpers disponibles.
+        Los helpers disponibles se actualizan en tiempo real al editar el JSON.
       </div>
-      <div className="json-toolbar">
+      <div className="json-toolbar" style={{ flexWrap: 'wrap' }}>
         <button className="tbtn" style={{ fontSize: 10 }} onClick={reset}>
           <i className="ti ti-refresh" style={{ fontSize: 11 }} /> Reset
         </button>
         <button
           className="tbtn"
-          style={{ fontSize: 10, background: dirty ? 'var(--color-accent, #2563eb)' : undefined, color: dirty ? '#fff' : undefined }}
-          disabled={!dirty && !status.ok}
+          style={{
+            fontSize: 10,
+            ...(dirty && status.ok ? { background: 'var(--color-accent, #2563eb)', color: '#fff' } : {}),
+          }}
+          disabled={!status.ok}
           onClick={save}
         >
           <i className="ti ti-device-floppy" style={{ fontSize: 11 }} />
