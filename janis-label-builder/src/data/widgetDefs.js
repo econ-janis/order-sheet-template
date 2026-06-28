@@ -167,6 +167,7 @@ export const HBS_BY_TYPE = {
     '{{formatDate ... "dd/MM HH:mm"}}',
     '{{order.shippingData.address.street}}',
     '{{formatTime order.shippings.[0].deliveryWindow.initialDate}} - {{formatTime order.shippings.[0].deliveryWindow.finalDate}}',
+    '{{formatDate order.shippings.[0].deliveryEstimateDate "dd/MM/yyyy"}}',
   ],
   products: [
     '{{#each order.items}}',
