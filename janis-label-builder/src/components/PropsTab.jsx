@@ -161,6 +161,17 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
             </div>
           </div>
         )}
+        <div className="prow">
+          <label>Marco de fila</label>
+          <select
+            value={selWidget.data.rowFrame || 'none'}
+            onChange={e => onUpdateProp(selWidget.id, 'rowFrame', e.target.value)}
+          >
+            <option value="none">Sin borde</option>
+            <option value="square">Cuadrado</option>
+            <option value="rounded">Redondeado</option>
+          </select>
+        </div>
       </div>
 
       {/* 2. Campo seleccionado */}

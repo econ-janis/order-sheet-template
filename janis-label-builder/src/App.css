@@ -74,11 +74,18 @@
   width: 100%; max-width: 480px; min-height: 360px;
 }
 .lcgrid {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.lcrow {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   align-items: start;
   width: 100%;
 }
+.lcrow-square  { border: 1.5px solid #333; }
+.lcrow-rounded { border: 1.5px solid #333; border-radius: 6px; overflow: hidden; }
 .dropzone {
   border: 1.5px dashed #d0d0d0; border-radius: 3px;
   margin: 6px; display: flex; align-items: center; justify-content: center;
@@ -464,9 +471,8 @@
   box-shadow: 0 2px 14px rgba(0,0,0,.12);
   padding: 12px;
 }
-.preview-paper .lcgrid {
-  display: grid; grid-template-columns: repeat(4, 1fr); align-items: start; gap: 0;
-}
+.preview-paper .lcgrid { display: flex; flex-direction: column; gap: 0; }
+.preview-paper .lcrow  { display: grid; grid-template-columns: repeat(4, 1fr); align-items: start; gap: 0; }
 
 /* ── Print: only the paper, filling the full page width ── */
 @media print {
