@@ -8,7 +8,7 @@ export const TEMPLATES = [
   {
     id: 'clasico',
     name: 'Clásico',
-    tag: 'Estilo Tata',
+    tag: 'Compacto',
     desc: 'Logo y encabezado lado a lado. Franja de despacho, datos del cliente y tabla de productos.',
     widgets: [
       w('logo',     { colSpan: 2, height: 70 }),
@@ -23,7 +23,7 @@ export const TEMPLATES = [
   {
     id: 'documento',
     name: 'Documento',
-    tag: 'Estilo Chedraui',
+    tag: 'Membrete',
     desc: 'Logo pequeño a la izquierda y número de pedido grande. Separador visual y sección de firma.',
     widgets: [
       w('logo',     { colSpan: 1, height: 60 }),
@@ -39,7 +39,7 @@ export const TEMPLATES = [
   {
     id: 'operacional',
     name: 'Operacional',
-    tag: 'Estilo Cenco',
+    tag: 'Almacén',
     desc: 'Franja horaria protagonista con colores cálidos. Pensado para operaciones de picking y control de bultos.',
     widgets: [
       w('logo',     { colSpan: 1, height: 60 }),
