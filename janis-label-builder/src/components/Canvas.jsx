@@ -548,14 +548,26 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
             <div className="preview-scroll">
               <div className="preview-paper" style={{ width: paperStyle.w, minHeight: paperStyle.h }}>
                 <div className="lcgrid">
-                  {widgets.map((w, i) => (
-                    <Fragment key={w.id}>
-                      <div style={{ gridColumn: `span ${w.data.colSpan ?? 4}`, minHeight: w.data.height ? w.data.height + 'px' : undefined }}>
-                        <WidgetRenderer widget={w} sampleData={sampleData} isSelected={false} onReorder={onReorder} />
+                  {buildRows(widgets).map(row => {
+                    const firstW = row.widgets[0]
+                    const frameVal = firstW.data.rowFrame || 'none'
+                    const rowCls = `lcrow${frameVal === 'rounded' ? ' lcrow-rounded' : frameVal === 'square' ? ' lcrow-square' : ''}`
+                    return (
+                      <div key={firstW.id + '-prev'} className={rowCls}>
+                        {row.widgets.map((w, wInRow) => {
+                          const i = row.indices[wInRow]
+                          return (
+                            <Fragment key={w.id}>
+                              <div style={{ gridColumn: `span ${w.data.colSpan ?? 4}`, minHeight: w.data.height ? w.data.height + 'px' : undefined }}>
+                                <WidgetRenderer widget={w} sampleData={sampleData} isSelected={false} onReorder={onReorder} />
+                              </div>
+                              {rowSlots[i] > 0 && <div style={{ gridColumn: `span ${rowSlots[i]}` }} />}
+                            </Fragment>
+                          )
+                        })}
                       </div>
-                      {rowSlots[i] > 0 && <div style={{ gridColumn: `span ${rowSlots[i]}` }} />}
-                    </Fragment>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             </div>
