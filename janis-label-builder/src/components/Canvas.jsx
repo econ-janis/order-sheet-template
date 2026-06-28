@@ -279,6 +279,7 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
   const [splitKey, setSplitKey] = useState(null)  // which widget's split zone is hot
   const [nativeDrag, setNativeDrag] = useState(false) // palette drag hovering the canvas
   const [paper, setPaper] = useState('a4')
+  const [landscape, setLandscape] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
   const dragStateRef = useRef(null)
@@ -360,7 +361,8 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
 
   const rowSlots = buildRowSlots(widgets)
   const dragActive = dragId !== null
-  const paperStyle = SIZE_MAP[paper] || SIZE_MAP.a4
+  const baseSize = SIZE_MAP[paper] || SIZE_MAP.a4
+  const paperStyle = landscape ? { w: baseSize.h, h: baseSize.w } : baseSize
 
   return (
     <div className="panel panel-center">
@@ -371,6 +373,14 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
             <option value="half">Media carta</option>
             <option value="label">Etiqueta 10×15</option>
           </select>
+          <button
+            className={`tbtn${landscape ? ' pri' : ''}`}
+            title={landscape ? 'Cambiar a vertical' : 'Cambiar a horizontal'}
+            onClick={() => setLandscape(v => !v)}
+          >
+            <i className={`ti ${landscape ? 'ti-layout-sidebar-right' : 'ti-layout-bottombar'}`} style={{ fontSize: 12 }} />
+            {landscape ? 'Horizontal' : 'Vertical'}
+          </button>
         </div>
         <div style={{ display: 'flex', gap: 5 }}>
           <button className="tbtn" onClick={() => setShowSaved(true)}>
