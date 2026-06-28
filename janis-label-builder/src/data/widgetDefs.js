@@ -79,17 +79,17 @@ export const WIDGET_TYPES = [
 ]
 
 export const WDEF = {
-  header:   { showOrderNum: true, showDate: true, showControl: true, colCount: 3, columns: { c0: [], c1: [], c2: ['date', 'control', 'orderNum'] }, height: null, colSpan: 4, rowFrame: 'none', fieldStyles: {}, customFields: {}, columnStyles: {} },
-  logo:     { imageUrl: '', objectFit: 'contain', bw: false, height: 100, colSpan: 1, rowFrame: 'none' },
-  client:   { showName: true, showCI: true, showPhone: true, showAddress: true, showPayment: true, colCount: 3, columns: { c0: ['name', 'ci', 'phone'], c1: ['address', 'payment'], c2: [] }, height: null, colSpan: 4, rowFrame: 'none', fieldStyles: {}, customFields: {}, columnStyles: {} },
-  dispatch: { showLogistic: true, showType: true, showDate: true, showAddress: true, bgColor: '#f0f4ff', accentColor: '#4a6cf7', colCount: 3, columns: { c0: ['logistic', 'type'], c1: ['date', 'address'], c2: [] }, height: null, colSpan: 4, rowFrame: 'none', fieldStyles: {}, customFields: {}, columnStyles: {} },
-  products: { showDesc: true, showEan: false, showSubst: true, showPrice: true, showOrigQty: true, showFinalQty: true, columnOrder: ['desc','ean','subst','price','origQty','finalQty'], locale: 'es-AR', currency: 'ARS', height: null, colSpan: 4, rowFrame: 'none' },
-  footer:   { storeName: '', phone: '', website: '', message: 'Gracias por tu compra', dark: true, mode: 'columns', imageUrl: '', colCount: 3, columns: { c0: ['name', 'phone', 'web'], c1: ['msg'], c2: [] }, height: null, colSpan: 4, rowFrame: 'none', fieldStyles: {}, customFields: {}, columnStyles: {} },
-  divider:  { style: 'solid', color: '#e8e8e8', height: null, colSpan: 4, rowFrame: 'none' },
-  text:     { content: 'Información importante del pedido', fontSize: 10, fontFamily: '', fontWeight: 'normal', fontStyle: 'normal', color: '#111111', textAlign: 'left', height: null, colSpan: 4, rowFrame: 'none' },
-  summary:  { colCount: 3, columns: { c0: ['orderNum', 'date', 'total', 'logistic', 'deliveryType', 'deliveryDate'], c1: ['clientName', 'ci', 'phone', 'address', 'payment'], c2: ['storeName', 'storePhone', 'itemCount'] }, columnStyles: {}, height: null, colSpan: 4, rowFrame: 'none', fieldStyles: {}, customFields: {} },
-  html:     { content: '<div style="padding:8px 14px">\n  <!-- tu HTML aquí -->\n</div>', height: null, colSpan: 4, rowFrame: 'none' },
-  barcode:  { value: '{{order.commerceSequentialId}}', format: 'qr', size: 120, colSpan: 1, height: null, rowFrame: 'none' },
+  header:   { showOrderNum: true, showDate: true, showControl: true, colCount: 3, columns: { c0: [], c1: [], c2: ['date', 'control', 'orderNum'] }, height: null, colSpan: 4, rowFrame: 'none', widthFr: 1, fieldStyles: {}, customFields: {}, columnStyles: {} },
+  logo:     { imageUrl: '', objectFit: 'contain', bw: false, height: 100, colSpan: 1, rowFrame: 'none', widthFr: 1 },
+  client:   { showName: true, showCI: true, showPhone: true, showAddress: true, showPayment: true, colCount: 3, columns: { c0: ['name', 'ci', 'phone'], c1: ['address', 'payment'], c2: [] }, height: null, colSpan: 4, rowFrame: 'none', widthFr: 1, fieldStyles: {}, customFields: {}, columnStyles: {} },
+  dispatch: { showLogistic: true, showType: true, showDate: true, showAddress: true, bgColor: '#f0f4ff', accentColor: '#4a6cf7', colCount: 3, columns: { c0: ['logistic', 'type'], c1: ['date', 'address'], c2: [] }, height: null, colSpan: 4, rowFrame: 'none', widthFr: 1, fieldStyles: {}, customFields: {}, columnStyles: {} },
+  products: { showDesc: true, showEan: false, showSubst: true, showPrice: true, showOrigQty: true, showFinalQty: true, columnOrder: ['desc','ean','subst','price','origQty','finalQty'], locale: 'es-AR', currency: 'ARS', height: null, colSpan: 4, rowFrame: 'none', widthFr: 1 },
+  footer:   { storeName: '', phone: '', website: '', message: 'Gracias por tu compra', dark: true, mode: 'columns', imageUrl: '', colCount: 3, columns: { c0: ['name', 'phone', 'web'], c1: ['msg'], c2: [] }, height: null, colSpan: 4, rowFrame: 'none', widthFr: 1, fieldStyles: {}, customFields: {}, columnStyles: {} },
+  divider:  { style: 'solid', color: '#e8e8e8', height: null, colSpan: 4, rowFrame: 'none', widthFr: 1 },
+  text:     { content: 'Información importante del pedido', fontSize: 10, fontFamily: '', fontWeight: 'normal', fontStyle: 'normal', color: '#111111', textAlign: 'left', height: null, colSpan: 4, rowFrame: 'none', widthFr: 1 },
+  summary:  { colCount: 3, columns: { c0: ['orderNum', 'date', 'total', 'logistic', 'deliveryType', 'deliveryDate'], c1: ['clientName', 'ci', 'phone', 'address', 'payment'], c2: ['storeName', 'storePhone', 'itemCount'] }, columnStyles: {}, height: null, colSpan: 4, rowFrame: 'none', widthFr: 1, fieldStyles: {}, customFields: {} },
+  html:     { content: '<div style="padding:8px 14px">\n  <!-- tu HTML aquí -->\n</div>', height: null, colSpan: 4, rowFrame: 'none', widthFr: 1 },
+  barcode:  { value: '{{order.commerceSequentialId}}', format: 'qr', size: 120, colSpan: 1, height: null, rowFrame: 'none', widthFr: 1 },
 }
 
 export const PLABELS = {

@@ -146,24 +146,15 @@ function DropZone({ dragTypeRef, onAdd, afterIndex = -1, colSpan = 4, fitSpan = 
   )
 }
 
-/* Resize handle — corner is 'se' (bottom-right) or 'sw' (bottom-left) */
-function ResizeHandle({ widget, canvasRef, onResize, corner = 'se' }) {
+/* Height resize handle — drag down to set explicit height */
+function ResizeHandle({ widget, onResize }) {
   const startRef = useRef(null)
-  const dir = corner === 'sw' ? -1 : 1   // which way widening the column count goes
   function onMouseDown(e) {
     e.preventDefault(); e.stopPropagation()
-    const canvasWidth = canvasRef.current?.offsetWidth || 480
-    const colWidth = canvasWidth / 4
-    startRef.current = {
-      startX: e.clientX, startY: e.clientY,
-      initColSpan: widget.data.colSpan ?? 4,
-      initHeight: widget.data.height ?? 80, colWidth,
-    }
+    startRef.current = { startY: e.clientY, initHeight: widget.data.height ?? 80 }
     function onMove(e) {
-      const { startX, startY, initColSpan, initHeight, colWidth } = startRef.current
-      const newColSpan = Math.max(1, Math.min(4, Math.round(initColSpan + dir * (e.clientX - startX) / colWidth)))
-      const newHeight = Math.max(20, Math.round(initHeight + (e.clientY - startY)))
-      onResize(widget.id, newColSpan, newHeight)
+      const { startY, initHeight } = startRef.current
+      onResize(widget.id, Math.max(20, Math.round(initHeight + (e.clientY - startY))))
     }
     function onUp() {
       document.removeEventListener('mousemove', onMove)
@@ -174,10 +165,38 @@ function ResizeHandle({ widget, canvasRef, onResize, corner = 'se' }) {
     document.addEventListener('mouseup', onUp)
   }
   return (
-    <div className={`resize-handle rh-${corner}`} onMouseDown={onMouseDown} onClick={e => e.stopPropagation()} title="Redimensionar">
-      <i className={`ti ${corner === 'sw' ? 'ti-arrows-diagonal-2' : 'ti-arrows-diagonal'}`} style={{ fontSize: 9, pointerEvents: 'none' }} />
+    <div className="resize-handle rh-s" onMouseDown={onMouseDown} onClick={e => e.stopPropagation()} title="Ajustar altura">
+      <i className="ti ti-arrows-vertical" style={{ fontSize: 9, pointerEvents: 'none' }} />
     </div>
   )
+}
+
+/* Width divider — drag horizontally between two adjacent widgets to redistribute width */
+function WidthDivider({ widgetA, widgetB, onResizeWidth }) {
+  function onMouseDown(e) {
+    e.preventDefault(); e.stopPropagation()
+    const rowEl = e.currentTarget.closest('.lcrow')
+    const rowWidth = rowEl?.offsetWidth || 600
+    const frA = widgetA.data.widthFr ?? 1
+    const frB = widgetB.data.widthFr ?? 1
+    const totalFr = frA + frB
+    const startX = e.clientX
+    document.body.style.cursor = 'col-resize'
+    function onMove(ev) {
+      const delta = ev.clientX - startX
+      const newFrA = Math.max(0.05, frA + (delta / rowWidth) * totalFr)
+      const newFrB = Math.max(0.05, totalFr - newFrA)
+      onResizeWidth(widgetA.id, newFrA, widgetB.id, newFrB)
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      document.body.style.cursor = ''
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
+  return <div className="width-divider" onMouseDown={onMouseDown} onClick={e => e.stopPropagation()} title="Ajustar ancho" />
 }
 
 const EXPORT_CSS = `
@@ -270,7 +289,7 @@ function buildRows(widgets) {
   return rows
 }
 
-export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onAddBeside, onDelete, onMove, onMoveTo, onSplit, onSelect, onClear, onTemplate, onReorder, onResize, selFieldKey, onFieldSelect, onRemoveField, onLoadLayout, getCurrentWidgets }) {
+export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onAddBeside, onDelete, onMove, onMoveTo, onSplit, onSelect, onClear, onTemplate, onReorder, onResize, onResizeWidth, selFieldKey, onFieldSelect, onRemoveField, onLoadLayout, getCurrentWidgets }) {
   const sizeRef = useRef(null)
   const canvasRef = useRef(null)
   const [dragId, setDragId] = useState(null)
@@ -436,13 +455,16 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                             <div className={rowCls}>
                               {row.widgets.map((w, wInRow) => {
                                 const i = row.indices[wInRow]
+                                const isLast = wInRow === row.widgets.length - 1
+                                const nextW = row.widgets[wInRow + 1]
                                 return (
                                   <Fragment key={w.id}>
                                     <div
                                       data-cwrap-id={w.id}
                                       className={`cwrap${selId === w.id ? ' sel-ring' : ''}${dragId === w.id ? ' cwrap-dragging' : ''}${splitKey === `${w.id}:left` ? ' cwrap-split-left' : ''}${splitKey === `${w.id}:right` ? ' cwrap-split-right' : ''}`}
                                       style={{
-                                        gridColumn: `span ${w.data.colSpan ?? 4}`,
+                                        flex: `${w.data.widthFr ?? 1} 1 0`,
+                                        minWidth: 0,
                                         minHeight: w.data.height ? w.data.height + 'px' : undefined,
                                       }}
                                       onClick={e => { e.stopPropagation(); onSelect(w.id) }}
@@ -492,14 +514,12 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                                           <i className="ti ti-x" aria-hidden="true" />
                                         </button>
                                       </div>
-                                      <ResizeHandle widget={w} canvasRef={canvasRef} onResize={onResize} corner="se" />
-                                      <ResizeHandle widget={w} canvasRef={canvasRef} onResize={onResize} corner="sw" />
+                                      <ResizeHandle widget={w} onResize={onResize} />
                                     </div>
 
-                                    {/* leftover-space slot inside the row */}
-                                    {rowSlots[i] > 0 && (
-                                      <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={i} colSpan={rowSlots[i]} fitSpan={rowSlots[i]}
-                                        zoneKey={`slot-${i}`} variant="slot" hot={hotKey === `slot-${i}`} />
+                                    {/* width divider between adjacent widgets */}
+                                    {!isLast && onResizeWidth && (
+                                      <WidthDivider widgetA={w} widgetB={nextW} onResizeWidth={onResizeWidth} />
                                     )}
                                   </Fragment>
                                 )
@@ -564,17 +584,11 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                     const rowCls = `lcrow${frameVal === 'rounded' ? ' lcrow-rounded' : frameVal === 'square' ? ' lcrow-square' : ''}`
                     return (
                       <div key={firstW.id + '-prev'} className={rowCls}>
-                        {row.widgets.map((w, wInRow) => {
-                          const i = row.indices[wInRow]
-                          return (
-                            <Fragment key={w.id}>
-                              <div style={{ gridColumn: `span ${w.data.colSpan ?? 4}`, minHeight: w.data.height ? w.data.height + 'px' : undefined }}>
-                                <WidgetRenderer widget={w} sampleData={sampleData} isSelected={false} onReorder={onReorder} />
-                              </div>
-                              {rowSlots[i] > 0 && <div style={{ gridColumn: `span ${rowSlots[i]}` }} />}
-                            </Fragment>
-                          )
-                        })}
+                        {row.widgets.map((w) => (
+                          <div key={w.id} style={{ flex: `${w.data.widthFr ?? 1} 1 0`, minWidth: 0, minHeight: w.data.height ? w.data.height + 'px' : undefined }}>
+                            <WidgetRenderer widget={w} sampleData={sampleData} isSelected={false} onReorder={onReorder} />
+                          </div>
+                        ))}
                       </div>
                     )
                   })}
