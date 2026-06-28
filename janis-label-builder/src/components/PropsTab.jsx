@@ -132,13 +132,13 @@ export default function PropsTab({ selWidget, selFieldKey, onUpdateProp, onUpdat
           />
         </div>
         <div className="prow">
-          <label>Ancho (col 1–4)</label>
+          <label>Ancho relativo</label>
           <input
             type="number"
-            defaultValue={selWidget.data.colSpan ?? 4}
-            min={1}
-            max={4}
-            onInput={e => onUpdateProp(selWidget.id, 'colSpan', Math.max(1, Math.min(4, +e.target.value)))}
+            defaultValue={selWidget.data.widthFr ?? 1}
+            min={0.1}
+            step={0.1}
+            onInput={e => onUpdateProp(selWidget.id, 'widthFr', Math.max(0.1, +e.target.value))}
           />
         </div>
         {hasColumns && (

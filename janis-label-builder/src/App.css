@@ -79,13 +79,20 @@
   width: 100%;
 }
 .lcrow {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  align-items: start;
+  display: flex;
+  align-items: stretch;
   width: 100%;
 }
 .lcrow-square  { border: 1.5px solid #333; }
 .lcrow-rounded { border: 1.5px solid #333; border-radius: 6px; overflow: hidden; }
+
+/* Draggable width divider between adjacent widgets */
+.width-divider {
+  width: 5px; flex-shrink: 0;
+  cursor: col-resize; position: relative; z-index: 11;
+  background: transparent; transition: background .1s;
+}
+.width-divider:hover { background: rgba(74,108,247,.35); }
 .dropzone {
   border: 1.5px dashed #d0d0d0; border-radius: 3px;
   margin: 6px; display: flex; align-items: center; justify-content: center;
@@ -113,14 +120,13 @@
 .cwrap:hover .wov { opacity: 1; }
 .cwrap:hover .resize-handle { opacity: 1; }
 .resize-handle {
-  position: absolute; bottom: 2px;
-  width: 16px; height: 16px;
+  position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+  width: 24px; height: 10px;
   display: flex; align-items: center; justify-content: center;
   background: rgba(74,108,247,.85); border-radius: 3px;
   color: #fff; opacity: 0; transition: opacity .12s; z-index: 12;
+  cursor: s-resize;
 }
-.rh-se { right: 2px; cursor: se-resize; }
-.rh-sw { left: 2px; cursor: sw-resize; }
 .cwrap:hover .resize-handle,
 .sel-ring .resize-handle { opacity: 1; }
 /* Move handle – grab to reorder widget (pointer-based drag) */
@@ -472,7 +478,7 @@
   padding: 12px;
 }
 .preview-paper .lcgrid { display: flex; flex-direction: column; gap: 0; }
-.preview-paper .lcrow  { display: grid; grid-template-columns: repeat(4, 1fr); align-items: start; gap: 0; }
+.preview-paper .lcrow  { display: flex; align-items: stretch; gap: 0; }
 
 /* ── Print: only the paper, filling the full page width ── */
 @media print {

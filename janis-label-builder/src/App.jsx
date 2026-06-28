@@ -84,10 +84,18 @@ export default function App() {
     )
   }
 
-  function resizeWidget(id, colSpan, height) {
+  function resizeWidget(id, height) {
     setWidgets(prev =>
-      prev.map(w => w.id === id ? { ...w, data: { ...w.data, colSpan, height } } : w)
+      prev.map(w => w.id === id ? { ...w, data: { ...w.data, height } } : w)
     )
+  }
+
+  function resizeWidthBetween(idA, frA, idB, frB) {
+    setWidgets(prev => prev.map(w => {
+      if (w.id === idA) return { ...w, data: { ...w.data, widthFr: frA } }
+      if (w.id === idB) return { ...w, data: { ...w.data, widthFr: frB } }
+      return w
+    }))
   }
 
   function splitWidgets(targetId, draggedId, side = 'right') {
@@ -98,9 +106,9 @@ export default function App() {
       if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return arr
       const [dragged] = arr.splice(fromIdx, 1)
       const newToIdx = arr.findIndex(w => w.id === targetId)
-      arr[newToIdx] = { ...arr[newToIdx], data: { ...arr[newToIdx].data, colSpan: 2 } }
+      arr[newToIdx] = { ...arr[newToIdx], data: { ...arr[newToIdx].data, colSpan: 2, widthFr: 1 } }
       const insertAt = side === 'left' ? newToIdx : newToIdx + 1
-      arr.splice(insertAt, 0, { ...dragged, data: { ...dragged.data, colSpan: 2 } })
+      arr.splice(insertAt, 0, { ...dragged, data: { ...dragged.data, colSpan: 2, widthFr: 1 } })
       return arr
     })
   }
@@ -108,11 +116,12 @@ export default function App() {
   function addBeside(targetId, type, side = 'right') {
     const w = { id: uid(), type, data: JSON.parse(JSON.stringify(WDEF[type])) }
     w.data.colSpan = 2
+    w.data.widthFr = 1
     setWidgets(prev => {
       const arr = [...prev]
       const i = arr.findIndex(x => x.id === targetId)
       if (i === -1) return [...prev, w]
-      arr[i] = { ...arr[i], data: { ...arr[i].data, colSpan: 2 } }
+      arr[i] = { ...arr[i], data: { ...arr[i].data, colSpan: 2, widthFr: 1 } }
       arr.splice(side === 'left' ? i : i + 1, 0, w)
       return arr
     })
@@ -276,6 +285,7 @@ export default function App() {
         onClear={clearCanvas}
         onReorder={reorderField}
         onResize={resizeWidget}
+        onResizeWidth={resizeWidthBetween}
         onMoveTo={moveWidgetTo}
         onSplit={splitWidgets}
         onAddBeside={addBeside}
