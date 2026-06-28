@@ -159,7 +159,19 @@ function resolveExpr(expr, data) {
   }
   if (parts.length === 1) return resolvePath(parts[0])
   const [name, arg] = parts
-  if (name === 'formatDate') return fmtDate(resolvePath(arg))
+  if (name === 'formatDate') {
+    const fmt = parts[2] || ''
+    const dateOnly = fmt && !fmt.includes('HH') && !fmt.includes('mm')
+    const raw = resolvePath(arg)
+    if (!raw) return ''
+    const d = new Date(raw)
+    if (isNaN(d)) return String(raw)
+    const dd = String(d.getDate()).padStart(2, '0')
+    const mo = String(d.getMonth() + 1).padStart(2, '0')
+    const hh = String(d.getHours()).padStart(2, '0')
+    const min = String(d.getMinutes()).padStart(2, '0')
+    return dateOnly ? `${dd}/${mo}/${d.getFullYear()}` : `${dd}/${mo}/${d.getFullYear()} ${hh}:${min}`
+  }
   if (name === 'formatTime') return fmtTime(resolvePath(arg))
   if (name === 'currency') return fmtCurrency(Number(resolvePath(arg)), 'es-UY', 'UYU')
   if (name === 'uppercase') return String(resolvePath(arg) ?? '').toUpperCase()
