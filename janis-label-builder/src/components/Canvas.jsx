@@ -244,6 +244,32 @@ function buildRowSlots(widgets) {
   return result
 }
 
+// Groups widgets into rows based on colSpan packing. Returns array of
+// { widgets, indices } where indices are the global positions in the flat array.
+function buildRows(widgets) {
+  const rows = []
+  let current = { widgets: [], indices: [] }
+  let col = 0
+  for (let i = 0; i < widgets.length; i++) {
+    const span = Math.min(4, Math.max(1, widgets[i].data.colSpan ?? 4))
+    if (col + span > 4) {
+      if (current.widgets.length) rows.push(current)
+      current = { widgets: [], indices: [] }
+      col = 0
+    }
+    current.widgets.push(widgets[i])
+    current.indices.push(i)
+    col += span
+    if (col >= 4) {
+      rows.push(current)
+      current = { widgets: [], indices: [] }
+      col = 0
+    }
+  }
+  if (current.widgets.length) rows.push(current)
+  return rows
+}
+
 export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onAddBeside, onDelete, onMove, onMoveTo, onSplit, onSelect, onClear, onTemplate, onReorder, onResize, selFieldKey, onFieldSelect, onRemoveField, onLoadLayout, getCurrentWidgets }) {
   const sizeRef = useRef(null)
   const canvasRef = useRef(null)
@@ -380,96 +406,113 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
           >
             {widgets.length === 0
               ? <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={-1} colSpan={4} zoneKey="empty" variant="empty" />
-              : (
-                <>
-                  {/* insertion bar before the first widget (only while reordering) */}
-                  {dragActive && (
-                    <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={-1} colSpan={4}
-                      zoneKey="bar--1" variant="bar" hot={hotKey === 'bar--1'} />
-                  )}
-
-                  {widgets.map((w, i) => (
-                    <Fragment key={w.id}>
-                      <div
-                        data-cwrap-id={w.id}
-                        className={`cwrap${selId === w.id ? ' sel-ring' : ''}${dragId === w.id ? ' cwrap-dragging' : ''}${splitKey === `${w.id}:left` ? ' cwrap-split-left' : ''}${splitKey === `${w.id}:right` ? ' cwrap-split-right' : ''}`}
-                        style={{
-                          gridColumn: `span ${w.data.colSpan ?? 4}`,
-                          minHeight: w.data.height ? w.data.height + 'px' : undefined,
-                        }}
-                        onClick={e => { e.stopPropagation(); onSelect(w.id) }}
-                        onDragOver={e => {
-                          if (!dragTypeRef.current || dragId) return
-                          e.preventDefault(); e.stopPropagation()
-                          const rect = e.currentTarget.getBoundingClientRect()
-                          const side = (e.clientX - rect.left) < rect.width / 2 ? 'left' : 'right'
-                          setSplitKey(`${w.id}:${side}`)
-                        }}
-                        onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setSplitKey(null) }}
-                        onDrop={e => {
-                          if (!dragTypeRef.current || dragId) return
-                          e.preventDefault(); e.stopPropagation()
-                          const rect = e.currentTarget.getBoundingClientRect()
-                          const side = (e.clientX - rect.left) < rect.width / 2 ? 'left' : 'right'
-                          onAddBeside(w.id, dragTypeRef.current, side)
-                          dragTypeRef.current = null
-                          setSplitKey(null); setNativeDrag(false)
-                        }}
-                      >
-                        <div
-                          className="cwrap-move-handle"
-                          title="Mantené presionado y arrastrá para mover"
-                          onMouseDown={e => startWidgetDrag(w.id, w.type, e)}
-                          onClick={e => e.stopPropagation()}
-                        >
-                          <i className="ti ti-arrows-move" style={{ fontSize: 11, pointerEvents: 'none' }} /> mover
-                        </div>
-
-                        <WidgetRenderer widget={w} sampleData={sampleData} isSelected={selId === w.id} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} onRemoveField={onRemoveField ? k => onRemoveField(w.id, k) : undefined} />
-                        {/* Beside-drop indicator: pointer-events:none so it never steals hit-testing */}
-                        {(splitKey === `${w.id}:left` || splitKey === `${w.id}:right`) && (
-                          <div className={`split-indicator split-indicator-${splitKey === `${w.id}:left` ? 'left' : 'right'}`} />
-                        )}
-                        <div className="wov">
-                          {i > 0 && (
-                            <button className="wob wob-mv" title="Subir" onClick={e => { e.stopPropagation(); onMove(w.id, -1) }}>
-                              <i className="ti ti-chevron-up" aria-hidden="true" />
-                            </button>
-                          )}
-                          {i < widgets.length - 1 && (
-                            <button className="wob wob-mv" title="Bajar" onClick={e => { e.stopPropagation(); onMove(w.id, 1) }}>
-                              <i className="ti ti-chevron-down" aria-hidden="true" />
-                            </button>
-                          )}
-                          <button className="wob wob-del" title="Eliminar" onClick={e => { e.stopPropagation(); onDelete(w.id) }}>
-                            <i className="ti ti-x" aria-hidden="true" />
-                          </button>
-                        </div>
-                        <ResizeHandle widget={w} canvasRef={canvasRef} onResize={onResize} corner="se" />
-                        <ResizeHandle widget={w} canvasRef={canvasRef} onResize={onResize} corner="sw" />
-                      </div>
-
-                      {/* leftover-space slot in the same row (palette + horizontal placement) */}
-                      {rowSlots[i] > 0 && (
-                        <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={i} colSpan={rowSlots[i]} fitSpan={rowSlots[i]}
-                          zoneKey={`slot-${i}`} variant="slot" hot={hotKey === `slot-${i}`} />
-                      )}
-
-                      {/* full-width insertion bar after each widget (only while reordering) */}
+              : (() => {
+                  const rows = buildRows(widgets)
+                  return (
+                    <>
+                      {/* insertion bar before the first row (only while reordering) */}
                       {dragActive && (
-                        <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={i} colSpan={4}
-                          zoneKey={`bar-${i}`} variant="bar" hot={hotKey === `bar-${i}`} />
+                        <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={-1} colSpan={4}
+                          zoneKey="bar--1" variant="bar" hot={hotKey === 'bar--1'} />
                       )}
-                    </Fragment>
-                  ))}
 
-                  {/* trailing zone for palette drops when not reordering */}
-                  {!dragActive && (
-                    <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={widgets.length - 1} colSpan={4}
-                      zoneKey="trailing" variant="slot" />
-                  )}
-                </>
-              )}
+                      {rows.map(row => {
+                        const firstW = row.widgets[0]
+                        const frameVal = firstW.data.rowFrame || 'none'
+                        const lastIdx = row.indices[row.indices.length - 1]
+                        const rowCls = `lcrow${frameVal === 'rounded' ? ' lcrow-rounded' : frameVal === 'square' ? ' lcrow-square' : ''}`
+                        return (
+                          <Fragment key={firstW.id + '-row'}>
+                            <div className={rowCls}>
+                              {row.widgets.map((w, wInRow) => {
+                                const i = row.indices[wInRow]
+                                return (
+                                  <Fragment key={w.id}>
+                                    <div
+                                      data-cwrap-id={w.id}
+                                      className={`cwrap${selId === w.id ? ' sel-ring' : ''}${dragId === w.id ? ' cwrap-dragging' : ''}${splitKey === `${w.id}:left` ? ' cwrap-split-left' : ''}${splitKey === `${w.id}:right` ? ' cwrap-split-right' : ''}`}
+                                      style={{
+                                        gridColumn: `span ${w.data.colSpan ?? 4}`,
+                                        minHeight: w.data.height ? w.data.height + 'px' : undefined,
+                                      }}
+                                      onClick={e => { e.stopPropagation(); onSelect(w.id) }}
+                                      onDragOver={e => {
+                                        if (!dragTypeRef.current || dragId) return
+                                        e.preventDefault(); e.stopPropagation()
+                                        const rect = e.currentTarget.getBoundingClientRect()
+                                        const side = (e.clientX - rect.left) < rect.width / 2 ? 'left' : 'right'
+                                        setSplitKey(`${w.id}:${side}`)
+                                      }}
+                                      onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setSplitKey(null) }}
+                                      onDrop={e => {
+                                        if (!dragTypeRef.current || dragId) return
+                                        e.preventDefault(); e.stopPropagation()
+                                        const rect = e.currentTarget.getBoundingClientRect()
+                                        const side = (e.clientX - rect.left) < rect.width / 2 ? 'left' : 'right'
+                                        onAddBeside(w.id, dragTypeRef.current, side)
+                                        dragTypeRef.current = null
+                                        setSplitKey(null); setNativeDrag(false)
+                                      }}
+                                    >
+                                      <div
+                                        className="cwrap-move-handle"
+                                        title="Mantené presionado y arrastrá para mover"
+                                        onMouseDown={e => startWidgetDrag(w.id, w.type, e)}
+                                        onClick={e => e.stopPropagation()}
+                                      >
+                                        <i className="ti ti-arrows-move" style={{ fontSize: 11, pointerEvents: 'none' }} /> mover
+                                      </div>
+
+                                      <WidgetRenderer widget={w} sampleData={sampleData} isSelected={selId === w.id} onReorder={onReorder} selFieldKey={selFieldKey} onFieldSelect={onFieldSelect} onRemoveField={onRemoveField ? k => onRemoveField(w.id, k) : undefined} />
+                                      {(splitKey === `${w.id}:left` || splitKey === `${w.id}:right`) && (
+                                        <div className={`split-indicator split-indicator-${splitKey === `${w.id}:left` ? 'left' : 'right'}`} />
+                                      )}
+                                      <div className="wov">
+                                        {i > 0 && (
+                                          <button className="wob wob-mv" title="Subir" onClick={e => { e.stopPropagation(); onMove(w.id, -1) }}>
+                                            <i className="ti ti-chevron-up" aria-hidden="true" />
+                                          </button>
+                                        )}
+                                        {i < widgets.length - 1 && (
+                                          <button className="wob wob-mv" title="Bajar" onClick={e => { e.stopPropagation(); onMove(w.id, 1) }}>
+                                            <i className="ti ti-chevron-down" aria-hidden="true" />
+                                          </button>
+                                        )}
+                                        <button className="wob wob-del" title="Eliminar" onClick={e => { e.stopPropagation(); onDelete(w.id) }}>
+                                          <i className="ti ti-x" aria-hidden="true" />
+                                        </button>
+                                      </div>
+                                      <ResizeHandle widget={w} canvasRef={canvasRef} onResize={onResize} corner="se" />
+                                      <ResizeHandle widget={w} canvasRef={canvasRef} onResize={onResize} corner="sw" />
+                                    </div>
+
+                                    {/* leftover-space slot inside the row */}
+                                    {rowSlots[i] > 0 && (
+                                      <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={i} colSpan={rowSlots[i]} fitSpan={rowSlots[i]}
+                                        zoneKey={`slot-${i}`} variant="slot" hot={hotKey === `slot-${i}`} />
+                                    )}
+                                  </Fragment>
+                                )
+                              })}
+                            </div>
+
+                            {/* full-width insertion bar after each row (only while reordering) */}
+                            {dragActive && (
+                              <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={lastIdx} colSpan={4}
+                                zoneKey={`bar-${lastIdx}`} variant="bar" hot={hotKey === `bar-${lastIdx}`} />
+                            )}
+                          </Fragment>
+                        )
+                      })}
+
+                      {/* trailing zone for palette drops when not reordering */}
+                      {!dragActive && (
+                        <DropZone dragTypeRef={dragTypeRef} onAdd={onAdd} afterIndex={widgets.length - 1} colSpan={4}
+                          zoneKey="trailing" variant="slot" />
+                      )}
+                    </>
+                  )
+                })()}
           </div>
         </div>
       </div>
