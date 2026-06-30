@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, Fragment } from 'react'
+import { useRef, useState, useEffect, useLayoutEffect, Fragment } from 'react'
 import WidgetRenderer from './WidgetRenderer'
 import { genHbs, esc } from '../utils/helpers'
 
@@ -301,6 +301,9 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
   const [landscape, setLandscape] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
+  const [previewNumPages, setPreviewNumPages] = useState(1)
+  const previewMeasureRef = useRef(null)
+  const previewPageRef = useRef(null)
   const dragStateRef = useRef(null)
 
   function onSizeChange(e) {
@@ -367,6 +370,21 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
     document.addEventListener('mousemove', onMove)
     document.addEventListener('mouseup', onUp)
   }
+
+  // Measure rendered content height to compute number of preview pages.
+  useLayoutEffect(() => {
+    if (!showPreview) { setPreviewNumPages(1); return }
+    const measure = () => {
+      const el = previewMeasureRef.current
+      const pg = previewPageRef.current
+      if (!el || !pg) return
+      const pageH = pg.offsetHeight
+      const contentH = el.scrollHeight
+      if (pageH > 0) setPreviewNumPages(Math.max(1, Math.ceil(contentH / pageH)))
+    }
+    const t = setTimeout(measure, 80)
+    return () => clearTimeout(t)
+  }, [showPreview, widgets, paper, landscape])
 
   // When "Descargar PDF" is pressed we open the preview in print mode and fire
   // the browser print dialog (user saves as PDF) once it has rendered.
@@ -561,43 +579,77 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
         />
       )}
 
-      {showPreview && (
-        <div className="preview-overlay" onClick={() => setShowPreview(false)}>
-          <div className="preview-modal" onClick={e => e.stopPropagation()}>
-            <div className="preview-bar">
-              <span><i className="ti ti-eye" style={{ fontSize: 13 }} /> Vista previa real</span>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button className="tbtn pri" onClick={() => window.print()}>
-                  <i className="ti ti-download" style={{ fontSize: 12 }} /> Descargar PDF
-                </button>
-                <button className="tbtn" onClick={() => setShowPreview(false)}>
-                  <i className="ti ti-x" style={{ fontSize: 12 }} /> Cerrar
-                </button>
+      {showPreview && (() => {
+        function renderPreviewContent() {
+          return (
+            <div className="lcgrid">
+              {buildRows(widgets).map(row => {
+                const firstW = row.widgets[0]
+                const frameVal = firstW.data.rowFrame || 'none'
+                const rowCls = `lcrow${frameVal === 'rounded' ? ' lcrow-rounded' : frameVal === 'square' ? ' lcrow-square' : ''}`
+                return (
+                  <div key={firstW.id + '-prev'} className={rowCls}>
+                    {row.widgets.map((w) => (
+                      <div key={w.id} style={{ flex: `${w.data.widthFr ?? 1} 1 0`, minWidth: 0, minHeight: w.data.height ? w.data.height + 'px' : undefined }}>
+                        <WidgetRenderer widget={w} sampleData={sampleData} isSelected={false} onReorder={onReorder} />
+                      </div>
+                    ))}
+                  </div>
+                )
+              })}
+            </div>
+          )
+        }
+        return (
+          <div className="preview-overlay" onClick={() => setShowPreview(false)}>
+            {/* Off-screen measure div — content at real paper width, no height cap */}
+            <div style={{ position: 'fixed', left: -10000, top: 0, width: paperStyle.w, visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
+              <div ref={previewMeasureRef} style={{ padding: '12px' }}>
+                {renderPreviewContent()}
               </div>
             </div>
-            <div className="preview-scroll">
-              <div className="preview-paper" style={{ width: paperStyle.w, minHeight: paperStyle.h }}>
-                <div className="lcgrid">
-                  {buildRows(widgets).map(row => {
-                    const firstW = row.widgets[0]
-                    const frameVal = firstW.data.rowFrame || 'none'
-                    const rowCls = `lcrow${frameVal === 'rounded' ? ' lcrow-rounded' : frameVal === 'square' ? ' lcrow-square' : ''}`
-                    return (
-                      <div key={firstW.id + '-prev'} className={rowCls}>
-                        {row.widgets.map((w) => (
-                          <div key={w.id} style={{ flex: `${w.data.widthFr ?? 1} 1 0`, minWidth: 0, minHeight: w.data.height ? w.data.height + 'px' : undefined }}>
-                            <WidgetRenderer widget={w} sampleData={sampleData} isSelected={false} onReorder={onReorder} />
-                          </div>
-                        ))}
+            {/* Single page height reference */}
+            <div ref={previewPageRef} style={{ position: 'fixed', left: -10000, top: 0, width: paperStyle.w, height: paperStyle.h, visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }} />
+
+            <div className="preview-modal" onClick={e => e.stopPropagation()}>
+              <div className="preview-bar">
+                <span>
+                  <i className="ti ti-eye" style={{ fontSize: 13 }} /> Vista previa real
+                  {previewNumPages > 1 && (
+                    <span style={{ fontSize: 10, color: '#9ca3af', fontWeight: 400 }}>— {previewNumPages} páginas</span>
+                  )}
+                </span>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button className="tbtn pri" onClick={() => window.print()}>
+                    <i className="ti ti-download" style={{ fontSize: 12 }} /> Descargar PDF
+                  </button>
+                  <button className="tbtn" onClick={() => setShowPreview(false)}>
+                    <i className="ti ti-x" style={{ fontSize: 12 }} /> Cerrar
+                  </button>
+                </div>
+              </div>
+
+              <div className="preview-scroll">
+                {/* Screen: discrete page divs */}
+                <div className="preview-pages-visual">
+                  {Array.from({ length: previewNumPages }, (_, i) => (
+                    <div key={i} className="preview-page-visual" style={{ width: paperStyle.w, height: paperStyle.h }}>
+                      <div style={{ position: 'absolute', left: 0, right: 0, top: i === 0 ? 0 : `calc(-${i} * ${paperStyle.h})`, padding: '12px' }}>
+                        {renderPreviewContent()}
                       </div>
-                    )
-                  })}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Print-only: single natural-flow paper */}
+                <div className="preview-paper preview-paper-print-only" style={{ width: paperStyle.w, minHeight: paperStyle.h }}>
+                  {renderPreviewContent()}
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

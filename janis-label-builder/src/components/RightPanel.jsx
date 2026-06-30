@@ -45,7 +45,7 @@ export default function RightPanel({ activeTab, setActiveTab, selWidget, sampleD
           <DataTab sampleData={sampleData} setSampleData={setSampleData} />
         )}
         {activeTab === 'hbs' && (
-          <HbsTab selWidget={selWidget} />
+          <HbsTab selWidget={selWidget} sampleData={sampleData} />
         )}
       </div>
     </div>
