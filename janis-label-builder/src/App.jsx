@@ -5,7 +5,7 @@ import RightPanel from './components/RightPanel'
 import TemplateModal from './components/TemplateModal'
 import { WDEF } from './data/widgetDefs'
 import { SAMPLE_DATA } from './data/sampleData'
-import { uid, deriveHbsFromData } from './utils/helpers'
+import { uid, deriveHbsFromData, genFullHbs } from './utils/helpers'
 import './App.css'
 
 export default function App() {
@@ -23,10 +23,17 @@ export default function App() {
   })
   const [dynamicHbs, setDynamicHbs] = useState(() => deriveHbsFromData(sampleData))
   const [showTemplateModal, setShowTemplateModal] = useState(widgets.length === 0)
+  const [hbsEditorCode, setHbsEditorCode] = useState('')
   const dragTypeRef = useRef(null)
 
   useEffect(() => { setSelFieldKey(null) }, [selId])
   useEffect(() => { setDynamicHbs(deriveHbsFromData(sampleData)) }, [sampleData])
+  // Auto-populate HBS editor with canvas code when switching to HBS tab
+  useEffect(() => {
+    if (activeTab === 'hbs' && !hbsEditorCode && widgets.length > 0) {
+      setHbsEditorCode(genFullHbs(widgets))
+    }
+  }, [activeTab])
 
   function addWidget(type, afterIndex = -1, fitSpan = null) {
     const w = { id: uid(), type, data: JSON.parse(JSON.stringify(WDEF[type])) }
@@ -269,6 +276,10 @@ export default function App() {
 
   const selWidget = widgets.find(w => w.id === selId) ?? null
 
+  function reloadHbsFromCanvas() {
+    setHbsEditorCode(genFullHbs(widgets))
+  }
+
   return (
     <div className="builder" id="builder">
       {showTemplateModal && <TemplateModal onSelect={loadTemplate} onClose={() => setShowTemplateModal(false)} />}
@@ -295,6 +306,7 @@ export default function App() {
         selFieldKey={selFieldKey}
         onFieldSelect={setSelFieldKey}
         onRemoveField={removeField}
+        hbsEditorCode={activeTab === 'hbs' ? hbsEditorCode : ''}
       />
       <RightPanel
         activeTab={activeTab}
@@ -314,6 +326,9 @@ export default function App() {
         onAddHelper={addHelper}
         onUpdateColumnStyle={updateColumnStyle}
         onRestoreField={restoreField}
+        hbsEditorCode={hbsEditorCode}
+        onHbsEditorChange={setHbsEditorCode}
+        onReloadHbsFromCanvas={reloadHbsFromCanvas}
       />
     </div>
   )
