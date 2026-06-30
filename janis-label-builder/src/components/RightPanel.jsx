@@ -8,7 +8,7 @@ const TABS = [
   { id: 'hbs',   label: 'HBS' },
 ]
 
-export default function RightPanel({ activeTab, setActiveTab, selWidget, sampleData, setSampleData, dynamicHbs, onUpdateProp, selFieldKey, onUpdateFieldStyle, onUpdateCustomField, onUpdateCustomFieldLabel, onUpdateCustomFieldProp, onAddCustomField, onUpdateColCount, onAddHelper, onUpdateColumnStyle, onRestoreField }) {
+export default function RightPanel({ activeTab, setActiveTab, selWidget, sampleData, setSampleData, dynamicHbs, onUpdateProp, selFieldKey, onUpdateFieldStyle, onUpdateCustomField, onUpdateCustomFieldLabel, onUpdateCustomFieldProp, onAddCustomField, onUpdateColCount, onAddHelper, onUpdateColumnStyle, onRestoreField, hbsEditorCode, onHbsEditorChange, onReloadHbsFromCanvas }) {
   return (
     <div className="panel panel-right">
       <div className="tab-row">
@@ -45,7 +45,12 @@ export default function RightPanel({ activeTab, setActiveTab, selWidget, sampleD
           <DataTab sampleData={sampleData} setSampleData={setSampleData} />
         )}
         {activeTab === 'hbs' && (
-          <HbsTab selWidget={selWidget} sampleData={sampleData} />
+          <HbsTab
+            selWidget={selWidget}
+            hbsEditorCode={hbsEditorCode}
+            onHbsEditorChange={onHbsEditorChange}
+            onReloadFromCanvas={onReloadHbsFromCanvas}
+          />
         )}
       </div>
     </div>

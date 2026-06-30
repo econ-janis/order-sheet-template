@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useLayoutEffect, Fragment } from 'react'
 import WidgetRenderer from './WidgetRenderer'
-import { genHbs, esc } from '../utils/helpers'
+import { genHbs, esc, resolveTemplate } from '../utils/helpers'
 
 const LS_KEY = 'janis_lb_layouts'
 
@@ -289,7 +289,7 @@ function buildRows(widgets) {
   return rows
 }
 
-export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onAddBeside, onDelete, onMove, onMoveTo, onSplit, onSelect, onClear, onTemplate, onReorder, onResize, onResizeWidth, selFieldKey, onFieldSelect, onRemoveField, onLoadLayout, getCurrentWidgets }) {
+export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd, onAddBeside, onDelete, onMove, onMoveTo, onSplit, onSelect, onClear, onTemplate, onReorder, onResize, onResizeWidth, selFieldKey, onFieldSelect, onRemoveField, onLoadLayout, getCurrentWidgets, hbsEditorCode }) {
   const sizeRef = useRef(null)
   const canvasRef = useRef(null)
   const [dragId, setDragId] = useState(null)
@@ -429,13 +429,13 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
           <button className="tbtn" onClick={onClear}>
             <i className="ti ti-trash" style={{ fontSize: 12 }} aria-hidden="true" /> Limpiar
           </button>
-          <button className="tbtn" onClick={() => widgets.length ? setShowPreview(true) : alert('Agregá al menos un widget.')}>
+          <button className="tbtn" onClick={() => (hbsEditorCode || widgets.length) ? setShowPreview(true) : alert('Agregá al menos un widget.')}>
             <i className="ti ti-eye" style={{ fontSize: 12 }} aria-hidden="true" /> Preview
           </button>
           <button className="tbtn" onClick={() => exportHbs(widgets)}>
             <i className="ti ti-code" style={{ fontSize: 12 }} aria-hidden="true" /> Exportar HBS
           </button>
-          <button className="tbtn pri" onClick={() => widgets.length ? setShowPreview('print') : alert('Agregá al menos un widget.')}>
+          <button className="tbtn pri" onClick={() => (hbsEditorCode || widgets.length) ? setShowPreview('print') : alert('Agregá al menos un widget.')}>
             <i className="ti ti-download" style={{ fontSize: 12 }} aria-hidden="true" /> Descargar PDF
           </button>
         </div>
@@ -443,6 +443,14 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
 
       <div className="carea">
         <div className="lcanvas" ref={sizeRef} style={{ maxWidth: paperStyle.w, minHeight: paperStyle.h }}>
+        {hbsEditorCode ? (
+          <iframe
+            srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;padding:0;background:#fff}${EXPORT_CSS}</style></head><body>${resolveTemplate(hbsEditorCode, sampleData)}</body></html>`}
+            style={{ width: '100%', minHeight: paperStyle.h, border: 'none', display: 'block' }}
+            sandbox="allow-same-origin"
+            title="HBS preview"
+          />
+        ) : (
           <div
             className={`lcgrid${dragActive ? ' grid-dragging' : ''}`}
             ref={canvasRef}
@@ -562,6 +570,7 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                   )
                 })()}
           </div>
+        )}
         </div>
       </div>
 
@@ -580,6 +589,40 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
       )}
 
       {showPreview && (() => {
+        // HBS editor mode: show resolved iframe + print div
+        if (hbsEditorCode) {
+          const resolved = resolveTemplate(hbsEditorCode, sampleData)
+          const iframeDoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;padding:0;background:#fff}${EXPORT_CSS}</style></head><body>${resolved}</body></html>`
+          return (
+            <div className="preview-overlay" onClick={() => setShowPreview(false)}>
+              {/* Print-only: raw resolved HTML */}
+              <div className="hbs-preview-print" dangerouslySetInnerHTML={{ __html: resolved }} />
+              <div className="preview-modal" style={{ maxWidth: 900 }} onClick={e => e.stopPropagation()}>
+                <div className="preview-bar">
+                  <span><i className="ti ti-code" style={{ fontSize: 13 }} /> Vista previa HBS</span>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button className="tbtn pri" onClick={() => window.print()}>
+                      <i className="ti ti-download" style={{ fontSize: 12 }} /> Descargar PDF
+                    </button>
+                    <button className="tbtn" onClick={() => setShowPreview(false)}>
+                      <i className="ti ti-x" style={{ fontSize: 12 }} /> Cerrar
+                    </button>
+                  </div>
+                </div>
+                <div className="preview-scroll" style={{ padding: 24 }}>
+                  <iframe
+                    srcDoc={iframeDoc}
+                    style={{ width: paperStyle.w, minHeight: paperStyle.h, border: 'none', display: 'block', background: '#fff', boxShadow: '0 2px 14px rgba(0,0,0,.12)' }}
+                    sandbox="allow-same-origin"
+                    title="HBS preview"
+                  />
+                </div>
+              </div>
+            </div>
+          )
+        }
+
+        // Widget mode: multi-page preview
         function renderPreviewContent() {
           return (
             <div className="lcgrid">
@@ -602,13 +645,12 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
         }
         return (
           <div className="preview-overlay" onClick={() => setShowPreview(false)}>
-            {/* Off-screen measure div — content at real paper width, no height cap */}
+            {/* Off-screen measure div */}
             <div style={{ position: 'fixed', left: -10000, top: 0, width: paperStyle.w, visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
               <div ref={previewMeasureRef} style={{ padding: '12px' }}>
                 {renderPreviewContent()}
               </div>
             </div>
-            {/* Single page height reference */}
             <div ref={previewPageRef} style={{ position: 'fixed', left: -10000, top: 0, width: paperStyle.w, height: paperStyle.h, visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }} />
 
             <div className="preview-modal" onClick={e => e.stopPropagation()}>
@@ -630,7 +672,6 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
               </div>
 
               <div className="preview-scroll">
-                {/* Screen: discrete page divs */}
                 <div className="preview-pages-visual">
                   {Array.from({ length: previewNumPages }, (_, i) => (
                     <div key={i} className="preview-page-visual" style={{ width: paperStyle.w, height: paperStyle.h }}>
@@ -640,8 +681,6 @@ export default function Canvas({ widgets, selId, sampleData, dragTypeRef, onAdd,
                     </div>
                   ))}
                 </div>
-
-                {/* Print-only: single natural-flow paper */}
                 <div className="preview-paper preview-paper-print-only" style={{ width: paperStyle.w, minHeight: paperStyle.h }}>
                   {renderPreviewContent()}
                 </div>

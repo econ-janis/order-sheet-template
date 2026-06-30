@@ -361,3 +361,19 @@ export function genHbs(w) {
 
   return ''
 }
+
+/* ── Generate full canvas HBS template (all widgets in grid layout) ── */
+export function genFullHbs(widgets) {
+  if (!widgets.length) return ''
+  const body = widgets.map(w => {
+    const span = w.data.colSpan ?? 4
+    const inner = genHbs(w).replace(/\n/g, '\n    ')
+    return `  <div style="grid-column:span ${span}">\n    ${inner}\n  </div>`
+  }).join('\n\n')
+  return (
+    `{{#if order}}\n` +
+    `<div class="label-container" id="pedido-{{order.commerceSequentialId}}" style="display:grid;grid-template-columns:repeat(4,1fr);align-items:start">\n\n` +
+    body +
+    `\n\n</div>\n{{/if}}`
+  )
+}
